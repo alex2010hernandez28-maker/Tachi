@@ -46,9 +46,59 @@
 
         </div>
 
+        <!-- REPRODUCTOR DE MÚSICA -->
+
+        <section class="reproductor">
+
+            <h2>🎵 Música</h2>
+
+            <p id="nombreCancion">
+                Selecciona una canción de tu dispositivo
+            </p>
+
+            <input
+                type="file"
+                id="archivoMusica"
+                accept="audio/*"
+            >
+
+            <div class="controles-musica">
+
+                <button id="reproducirMusica">
+                    ▶️ Reproducir
+                </button>
+
+                <button id="pausarMusica">
+                    ⏸️ Pausar
+                </button>
+
+                <button id="detenerMusica">
+                    ⏹️ Detener
+                </button>
+
+            </div>
+
+            <label for="volumen">
+                🔊 Volumen
+            </label>
+
+            <input
+                type="range"
+                id="volumen"
+                min="0"
+                max="1"
+                step="0.01"
+                value="1"
+            >
+
+            <audio id="audioMusica"></audio>
+
+        </section>
+
     </main>
 
-    <!-- Cuadro de funciones -->
+    <!-- CUADRO DE FUNCIONES -->
+
     <aside class="funciones">
 
         <h2>🤖 ¿Qué puede hacer Tachi?</h2>
@@ -61,9 +111,11 @@
             <li>👋 Responder saludos</li>
             <li>😊 Decirte cómo está</li>
             <li>🔊 Repetir lo que escribas</li>
+            <li>🎵 Reproducir música de tu dispositivo</li>
+            <li>⏸️ Pausar y continuar música</li>
+            <li>🔊 Controlar el volumen</li>
             <li>😴 Dormirse cuando está inactivo</li>
             <li>👀 Despertarse cuando le hablas</li>
-            <li>🌎 Funcionar desde cualquier dispositivo compatible</li>
         </ul>
 
     </aside>
