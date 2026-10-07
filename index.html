@@ -1,126 +1,147 @@
-<!DOCTYPE html>
-<html lang="es">
+<!DOCTYPE html><html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Mi Robot IA</title>
 
-    <title>Mi Robot IA</title>
+<link rel="stylesheet" href="style.css">
 
-    <link rel="stylesheet" href="style.css">
-</head>
+</head><body><main class="contenedor">
 
-<body>
+    <div class="robot">
 
-    <main class="contenedor">
+        <div class="ojo ojo-izquierdo"></div>
+        <div class="ojo ojo-derecho"></div>
 
-        <div class="robot">
+        <div class="boca"></div>
 
-            <div class="ojo ojo-izquierdo"></div>
-            <div class="ojo ojo-derecho"></div>
+    </div>
 
-            <div class="boca"></div>
+    <h1>ROBOT IA</h1>
 
-        </div>
+    <p id="mensaje">
+        Hola 👋
+    </p>
 
-        <h1>ROBOT IA</h1>
+    <button id="hablar">
+        🎤 Hablar
+    </button>
 
-        <p id="mensaje">
-            Hola 👋
-        </p>
+    <div class="zona-escribir">
 
-        <button id="hablar">
-            🎤 Hablar
+        <input
+            type="text"
+            id="textoRepetir"
+            placeholder="Escribe algo para que Tachi lo diga..."
+        >
+
+        <button id="repetir">
+            🔊 Repetir
         </button>
 
-        <div class="zona-escribir">
+    </div>
 
-            <input
-                type="text"
-                id="textoRepetir"
-                placeholder="Escribe algo para que Tachi lo diga..."
-            >
+    <!-- RESOLVER MATEMÁTICAS -->
 
-            <button id="repetir">
-                🔊 Repetir
+    <section class="matematicas">
+
+        <h2>🧮 Resolver matemáticas</h2>
+
+        <p>
+            Escribe una operación o ecuación
+        </p>
+
+        <input
+            type="text"
+            id="ecuacion"
+            placeholder="Ej: 25 + 37 o 2x + 5 = 15"
+        >
+
+        <button id="resolver">
+            🧮 Resolver
+        </button>
+
+        <div id="resultadoMatematico">
+            Aquí aparecerá la respuesta
+        </div>
+
+    </section>
+
+    <!-- REPRODUCTOR DE MÚSICA -->
+
+    <section class="reproductor">
+
+        <h2>🎵 Música</h2>
+
+        <p id="nombreCancion">
+            Selecciona una canción de tu dispositivo
+        </p>
+
+        <input
+            type="file"
+            id="archivoMusica"
+            accept="audio/*"
+        >
+
+        <div class="controles-musica">
+
+            <button id="reproducirMusica">
+                ▶️ Reproducir
+            </button>
+
+            <button id="pausarMusica">
+                ⏸️ Pausar
+            </button>
+
+            <button id="detenerMusica">
+                ⏹️ Detener
             </button>
 
         </div>
 
-        <!-- REPRODUCTOR DE MÚSICA -->
+        <label for="volumen">
+            🔊 Volumen
+        </label>
 
-        <section class="reproductor">
+        <input
+            type="range"
+            id="volumen"
+            min="0"
+            max="1"
+            step="0.01"
+            value="1"
+        >
 
-            <h2>🎵 Música</h2>
+        <audio id="audioMusica"></audio>
 
-            <p id="nombreCancion">
-                Selecciona una canción de tu dispositivo
-            </p>
+    </section>
 
-            <input
-                type="file"
-                id="archivoMusica"
-                accept="audio/*"
-            >
+</main>
 
-            <div class="controles-musica">
+<!-- CUADRO DE FUNCIONES -->
 
-                <button id="reproducirMusica">
-                    ▶️ Reproducir
-                </button>
+<aside class="funciones">
 
-                <button id="pausarMusica">
-                    ⏸️ Pausar
-                </button>
+    <h2>🤖 ¿Qué puede hacer Tachi?</h2>
 
-                <button id="detenerMusica">
-                    ⏹️ Detener
-                </button>
+    <ul>
+        <li>🎤 Escuchar tu voz</li>
+        <li>🗣️ Responder cuando hablas</li>
+        <li>🕐 Decirte la hora</li>
+        <li>📅 Decirte la fecha</li>
+        <li>👋 Responder saludos</li>
+        <li>😊 Decirte cómo está</li>
+        <li>🔊 Repetir lo que escribas</li>
+        <li>🧮 Resolver operaciones y ecuaciones</li>
+        <li>🎵 Reproducir música de tu dispositivo</li>
+        <li>⏸️ Pausar y continuar música</li>
+        <li>🔊 Controlar el volumen</li>
+        <li>😴 Dormirse cuando está inactivo</li>
+        <li>👀 Despertarse cuando le hablas</li>
+    </ul>
 
-            </div>
+</aside>
 
-            <label for="volumen">
-                🔊 Volumen
-            </label>
-
-            <input
-                type="range"
-                id="volumen"
-                min="0"
-                max="1"
-                step="0.01"
-                value="1"
-            >
-
-            <audio id="audioMusica"></audio>
-
-        </section>
-
-    </main>
-
-    <!-- CUADRO DE FUNCIONES -->
-
-    <aside class="funciones">
-
-        <h2>🤖 ¿Qué puede hacer Tachi?</h2>
-
-        <ul>
-            <li>🎤 Escuchar tu voz</li>
-            <li>🗣️ Responder cuando dices "Tachi"</li>
-            <li>🕐 Decirte la hora</li>
-            <li>📅 Decirte la fecha</li>
-            <li>👋 Responder saludos</li>
-            <li>😊 Decirte cómo está</li>
-            <li>🔊 Repetir lo que escribas</li>
-            <li>🎵 Reproducir música de tu dispositivo</li>
-            <li>⏸️ Pausar y continuar música</li>
-            <li>🔊 Controlar el volumen</li>
-            <li>😴 Dormirse cuando está inactivo</li>
-            <li>👀 Despertarse cuando le hablas</li>
-        </ul>
-
-    </aside>
-
-    <script src="script.js"></script>
+<script src="script.js"></script>
 
 </body>
 </html>
