@@ -1,481 +1,640 @@
 const mensaje = document.getElementById("mensaje");
-
 const boton = document.getElementById("hablar");
 
 const botonRepetir = document.getElementById("repetir");
-
 const textoRepetir = document.getElementById("textoRepetir");
-
-
-const ReconocimientoVoz =
-    window.SpeechRecognition || window.webkitSpeechRecognition;
-
-const reconocimiento = new ReconocimientoVoz();
-
-reconocimiento.lang = "es-SV";
-reconocimiento.continuous = false;
-reconocimiento.interimResults = false;
 
 const robot = document.querySelector(".robot");
 
-let temporizadorDormido;
-
 
 // ==============================
-// DORMIR
-// ==============================
-
-function iniciarTemporizadorDormido() {
-
-    clearTimeout(temporizadorDormido);
-
-    temporizadorDormido = setTimeout(function () {
-
-        robot.classList.remove("feliz");
-        robot.classList.remove("sorprendido");
-
-        robot.classList.add("dormido");
-
-        mensaje.textContent = "😴 Zzz...";
-
-    }, 5000);
-}
-
-
-// ==============================
-// DESPERTAR
-// ==============================
-
-function despertarRobot() {
-
-    robot.classList.remove("dormido");
-
-    mensaje.textContent = "👀 Estoy despierto";
-
-    iniciarTemporizadorDormido();
-}
-
-
-// ==============================
-// HACER QUE TACHI HABLE
+// VOZ
 // ==============================
 
 function hablar(texto) {
 
     speechSynthesis.cancel();
 
-    const respuesta =
-        new SpeechSynthesisUtterance(texto);
+    const voz = new SpeechSynthesisUtterance(texto);
 
-    respuesta.lang = "es-SV";
-    respuesta.rate = 1;
-    respuesta.pitch = 1;
+    voz.lang = "es-SV";
+    voz.rate = 1;
+    voz.pitch = 1;
 
-    speechSynthesis.speak(respuesta);
+    speechSynthesis.speak(voz);
 }
 
 
 // ==============================
-// AL EMPEZAR A ESCUCHAR
+// RECONOCIMIENTO DE VOZ
 // ==============================
 
-reconocimiento.onstart = function () {
+const SpeechRecognition =
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
 
-    robot.classList.remove("dormido");
+let reconocimiento = null;
 
-    mensaje.textContent = "🎤 ¡Te estoy escuchando!";
+if (SpeechRecognition) {
 
-    iniciarTemporizadorDormido();
-};
+    reconocimiento = new SpeechRecognition();
 
+    reconocimiento.lang = "es-SV";
+    reconocimiento.continuous = false;
+    reconocimiento.interimResults = false;
 
-// ==============================
-// CUANDO RECIBE LA VOZ
-// ==============================
+    reconocimiento.onstart = function () {
 
-reconocimiento.onresult = function (evento) {
+        despertar();
 
-    const texto = evento.results[0][0].transcript;
-
-    mensaje.textContent = "🗣️ Dijiste: " + texto;
-
-    const textoMinusculas = texto.toLowerCase();
-
-
-    // ==============================
-    // COMPROBAR SI DIJERON "TACHI"
-    // ==============================
-
-    if (!textoMinusculas.includes("tachi")) {
-
-        mensaje.textContent = "👂 No me llamaste";
-
-        iniciarTemporizadorDormido();
-
-        return;
-    }
+        mensaje.textContent = "🎤 ¡Te estoy escuchando!";
+    };
 
 
-    // ==============================
-    // EXPRESIÓN SORPRENDIDA
-    // ==============================
+    reconocimiento.onresult = function (evento) {
 
-    if (
-        textoMinusculas.includes("wow") ||
-        textoMinusculas.includes("sorpresa") ||
-        textoMinusculas.includes("increíble") ||
-        textoMinusculas.includes("increible") ||
-        textoMinusculas.includes("qué pasó") ||
-        textoMinusculas.includes("que paso")
-    ) {
+        despertar();
 
-        robot.classList.remove("feliz");
+        const texto =
+            evento.results[0][0].transcript;
 
-        robot.classList.add("sorprendido");
+        const textoMinusculas =
+            texto.toLowerCase();
 
-        setTimeout(function () {
-            robot.classList.remove("sorprendido");
-        }, 3000);
+        console.log("Usuario:", texto);
 
-    } else {
+
+        // TACHI DEBE SER MENCIONADO
+
+        if (!textoMinusculas.includes("tachi")) {
+
+            mensaje.textContent =
+                "👂 No me llamaste";
+
+            reiniciarTemporizador();
+
+            return;
+        }
+
 
         // ==============================
-        // EXPRESIÓN FELIZ
+        // EXPRESIONES
         // ==============================
 
-        robot.classList.remove("sorprendido");
+        if (
+            textoMinusculas.includes("wow") ||
+            textoMinusculas.includes("sorpresa") ||
+            textoMinusculas.includes("increible") ||
+            textoMinusculas.includes("increíble") ||
+            textoMinusculas.includes("que paso") ||
+            textoMinusculas.includes("qué pasó")
+        ) {
 
-        robot.classList.add("feliz");
-
-        setTimeout(function () {
-            robot.classList.remove("feliz");
-        }, 3000);
-    }
-
-
-    // ==============================
-    // RESPUESTA
-    // ==============================
-
-    let respuestaTexto;
-
-
-    // ==============================
-    // HORA
-    // ==============================
-
-    if (
-        textoMinusculas.includes("hora")
-    ) {
-
-        const ahora = new Date();
-
-        let horas = ahora.getHours();
-
-        const minutos =
-            String(ahora.getMinutes()).padStart(2, "0");
-
-        if (horas > 12) {
-            horas -= 12;
-        }
-
-        if (horas === 0) {
-            horas = 12;
-        }
-
-        respuestaTexto =
-            `Son las ${horas}:${minutos}`;
-
-    }
-
-
-    // ==============================
-    // FECHA / DÍA
-    // ==============================
-
-    else if (
-        textoMinusculas.includes("fecha") ||
-        textoMinusculas.includes("día") ||
-        textoMinusculas.includes("dia")
-    ) {
-
-        const ahora = new Date();
-
-        const dias = [
-            "domingo",
-            "lunes",
-            "martes",
-            "miércoles",
-            "jueves",
-            "viernes",
-            "sábado"
-        ];
-
-        const meses = [
-            "enero",
-            "febrero",
-            "marzo",
-            "abril",
-            "mayo",
-            "junio",
-            "julio",
-            "agosto",
-            "septiembre",
-            "octubre",
-            "noviembre",
-            "diciembre"
-        ];
-
-        const diaSemana =
-            dias[ahora.getDay()];
-
-        const dia =
-            ahora.getDate();
-
-        const mes =
-            meses[ahora.getMonth()];
-
-        const año =
-            ahora.getFullYear();
-
-        respuestaTexto =
-            `Hoy es ${diaSemana} ${dia} de ${mes} de ${año}`;
-
-    }
-
-
-    // ==============================
-    // HOLA / ¿CÓMO ESTÁS?
-    // ==============================
-
-    else if (
-        textoMinusculas.includes("hola") ||
-        textoMinusculas.includes("cómo estás") ||
-        textoMinusculas.includes("como estas")
-    ) {
-
-        respuestaTexto =
-            "Bien gracias por preguntar, ¿en qué puedo ayudarte?";
-
-    }
-
-
-    // ==============================
-    // BUENOS DÍAS
-    // ==============================
-
-    else if (
-        textoMinusculas.includes("buenos días") ||
-        textoMinusculas.includes("buenos dias")
-    ) {
-
-        const horaActual =
-            new Date().getHours();
-
-        if (horaActual >= 5 && horaActual < 12) {
-
-            respuestaTexto =
-                "¡Buenos días! ¿En qué puedo ayudarte?";
-
-        } else if (horaActual >= 12 && horaActual < 19) {
-
-            respuestaTexto =
-                "Aún es de tarde, ¿quisiste decir buenas tardes?";
+            mensaje.textContent = "😲";
 
         } else {
 
-            respuestaTexto =
-                "Aún es de noche, ¿quisiste decir buenas noches?";
+            mensaje.textContent = "😊";
+        }
+
+
+        // ==============================
+        // HORA
+        // ==============================
+
+        if (
+            textoMinusculas.includes("hora")
+        ) {
+
+            const ahora = new Date();
+
+            let horas = ahora.getHours();
+
+            const minutos =
+                ahora.getMinutes()
+                    .toString()
+                    .padStart(2, "0");
+
+            horas = horas % 12 || 12;
+
+            const respuesta =
+                `Son las ${horas}:${minutos}`;
+
+            mensaje.textContent =
+                `🕐 ${respuesta}`;
+
+            hablar(respuesta);
 
         }
 
-    }
 
+        // ==============================
+        // FECHA
+        // ==============================
 
-    // ==============================
-    // BUENAS TARDES
-    // ==============================
+        else if (
+            textoMinusculas.includes("fecha") ||
+            textoMinusculas.includes("día") ||
+            textoMinusculas.includes("dia")
+        ) {
 
-    else if (
-        textoMinusculas.includes("buenas tardes")
-    ) {
+            const fecha = new Date();
 
-        const horaActual =
-            new Date().getHours();
+            const opciones = {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+                year: "numeric"
+            };
 
-        if (horaActual >= 12 && horaActual < 19) {
+            const respuesta =
+                `Hoy es ${fecha.toLocaleDateString(
+                    "es-SV",
+                    opciones
+                )}`;
 
-            respuestaTexto =
-                "¡Buenas tardes! ¿En qué puedo ayudarte?";
+            mensaje.textContent =
+                `📅 ${respuesta}`;
 
-        } else if (horaActual >= 5 && horaActual < 12) {
-
-            respuestaTexto =
-                "Aún es de mañana, ¿quisiste decir buenos días?";
-
-        } else {
-
-            respuestaTexto =
-                "Ya es de noche, ¿quisiste decir buenas noches?";
-
+            hablar(respuesta);
         }
 
-    }
 
+        // ==============================
+        // HOLA
+        // ==============================
 
-    // ==============================
-    // BUENAS NOCHES
-    // ==============================
+        else if (
+            textoMinusculas.includes("hola") ||
+            textoMinusculas.includes("cómo estás") ||
+            textoMinusculas.includes("como estas")
+        ) {
 
-    else if (
-        textoMinusculas.includes("buenas noches")
-    ) {
+            const respuesta =
+                "Bien gracias por preguntar, ¿en qué puedo ayudarte?";
 
-        const horaActual =
-            new Date().getHours();
+            mensaje.textContent =
+                `😊 ${respuesta}`;
 
-        if (horaActual >= 19 || horaActual < 5) {
-
-            respuestaTexto =
-                "¡Buenas noches! ¿En qué puedo ayudarte?";
-
-        } else if (horaActual >= 12) {
-
-            respuestaTexto =
-                "Aún es de tarde, ¿quisiste decir buenas tardes?";
-
-        } else {
-
-            respuestaTexto =
-                "Aún es de día, ¿quisiste decir buenos días?";
-
+            hablar(respuesta);
         }
 
-    }
+
+        // ==============================
+        // BUENOS DIAS
+        // ==============================
+
+        else if (
+            textoMinusculas.includes("buenos días") ||
+            textoMinusculas.includes("buenos dias")
+        ) {
+
+            const horaActual =
+                new Date().getHours();
+
+            let respuesta;
 
 
-    // ==============================
-    // RESPUESTA GENERAL
-    // ==============================
+            if (
+                horaActual >= 5 &&
+                horaActual < 12
+            ) {
 
-    else {
+                respuesta =
+                    "¡Buenos días! ¿En qué puedo ayudarte?";
 
-        respuestaTexto =
-            "Sí, dime.";
+            }
 
-    }
+            else if (
+                horaActual >= 12 &&
+                horaActual < 19
+            ) {
+
+                respuesta =
+                    "Aún es de tarde, ¿quisiste decir buenas tardes?";
+
+            }
+
+            else {
+
+                respuesta =
+                    "Aún es de noche, ¿quisiste decir buenas noches?";
+            }
 
 
-    // ==============================
-    // TACHI HABLA
-    // ==============================
+            mensaje.textContent =
+                `🌅 ${respuesta}`;
 
-    hablar(respuestaTexto);
-
-    iniciarTemporizadorDormido();
-};
+            hablar(respuesta);
+        }
 
 
-// ==============================
-// ERROR
-// ==============================
+        // ==============================
+        // BUENAS TARDES
+        // ==============================
 
-reconocimiento.onerror = function (evento) {
+        else if (
+            textoMinusculas.includes("buenas tardes")
+        ) {
 
-    mensaje.textContent =
-        "❌ Error: " + evento.error;
+            const horaActual =
+                new Date().getHours();
 
-    console.log(
-        "Error de voz:",
-        evento.error
-    );
+            let respuesta;
 
-    iniciarTemporizadorDormido();
-};
+
+            if (
+                horaActual >= 12 &&
+                horaActual < 19
+            ) {
+
+                respuesta =
+                    "¡Buenas tardes! ¿En qué puedo ayudarte?";
+
+            }
+
+            else if (
+                horaActual >= 5 &&
+                horaActual < 12
+            ) {
+
+                respuesta =
+                    "Aún es de mañana, ¿quisiste decir buenos días?";
+
+            }
+
+            else {
+
+                respuesta =
+                    "Ya es de noche, ¿quisiste decir buenas noches?";
+            }
+
+
+            mensaje.textContent =
+                `🌇 ${respuesta}`;
+
+            hablar(respuesta);
+        }
+
+
+        // ==============================
+        // BUENAS NOCHES
+        // ==============================
+
+        else if (
+            textoMinusculas.includes("buenas noches")
+        ) {
+
+            const horaActual =
+                new Date().getHours();
+
+            let respuesta;
+
+
+            if (
+                horaActual >= 19 ||
+                horaActual < 5
+            ) {
+
+                respuesta =
+                    "¡Buenas noches! ¿En qué puedo ayudarte?";
+
+            }
+
+            else if (
+                horaActual >= 12 &&
+                horaActual < 19
+            ) {
+
+                respuesta =
+                    "Aún es de tarde, ¿quisiste decir buenas tardes?";
+
+            }
+
+            else {
+
+                respuesta =
+                    "Aún es de día, ¿quisiste decir buenos días?";
+            }
+
+
+            mensaje.textContent =
+                `🌙 ${respuesta}`;
+
+            hablar(respuesta);
+        }
+
+
+        // ==============================
+        // RESPUESTA GENERAL
+        // ==============================
+
+        else {
+
+            const respuesta =
+                "Sí, dime.";
+
+            mensaje.textContent =
+                `😊 ${respuesta}`;
+
+            hablar(respuesta);
+        }
+
+
+        reiniciarTemporizador();
+    };
+
+
+    reconocimiento.onerror = function (evento) {
+
+        mensaje.textContent =
+            "❌ No pude escucharte";
+
+        console.log(
+            "Error de reconocimiento:",
+            evento.error
+        );
+
+        reiniciarTemporizador();
+    };
+
+}
 
 
 // ==============================
 // BOTÓN HABLAR
 // ==============================
 
-boton.addEventListener("click", function () {
+boton.addEventListener(
+    "click",
+    function () {
 
-    despertarRobot();
+        despertar();
 
-    try {
+        if (!reconocimiento) {
 
-        reconocimiento.start();
+            mensaje.textContent =
+                "❌ Tu navegador no permite reconocimiento de voz.";
 
-    } catch (error) {
+            return;
+        }
 
-        console.log(
-            "Reconocimiento ya iniciado:",
-            error
-        );
+
+        try {
+
+            reconocimiento.start();
+
+        }
+
+        catch (error) {
+
+            console.log(error);
+        }
 
     }
-
-});
+);
 
 
 // ==============================
-// BOTÓN REPETIR TEXTO
+// REPETIR TEXTO
 // ==============================
 
-botonRepetir.addEventListener("click", function () {
+botonRepetir.addEventListener(
+    "click",
+    function () {
 
-    const texto =
-        textoRepetir.value.trim();
+        const texto =
+            textoRepetir.value.trim();
 
-    if (texto === "") {
+
+        if (texto === "") {
+
+            mensaje.textContent =
+                "✍️ Escribe algo primero";
+
+            return;
+        }
+
+
+        despertar();
 
         mensaje.textContent =
-            "✍️ Escribe algo primero";
+            `🗣️ Tachi dice: ${texto}`;
 
-        return;
+
+        hablar(texto);
+
+        reiniciarTemporizador();
+
     }
+);
 
 
-    despertarRobot();
+// ENTER PARA REPETIR
+
+textoRepetir.addEventListener(
+    "keydown",
+    function (evento) {
+
+        if (evento.key === "Enter") {
+
+            botonRepetir.click();
+        }
+
+    }
+);
+
+
+// ==============================
+// DORMIR
+// ==============================
+
+let temporizadorDormir;
+
+
+function reiniciarTemporizador() {
+
+    clearTimeout(temporizadorDormir);
+
+    temporizadorDormir =
+        setTimeout(
+            dormir,
+            5000
+        );
+}
+
+
+function dormir() {
+
+    robot.classList.add("dormido");
 
     mensaje.textContent =
-        "🗣️ Tachi dice: " + texto;
-
-    robot.classList.remove("sorprendido");
-
-    robot.classList.add("feliz");
-
-    setTimeout(function () {
-
-        robot.classList.remove("feliz");
-
-    }, 3000);
+        "😴 Zzz...";
+}
 
 
-    hablar(texto);
+function despertar() {
 
-    iniciarTemporizadorDormido();
-
-});
+    robot.classList.remove("dormido");
+}
 
 
 // ==============================
-// PERMITIR ENTER PARA REPETIR
+// REPRODUCTOR DE MÚSICA
 // ==============================
 
-textoRepetir.addEventListener("keydown", function (evento) {
+const archivoMusica =
+    document.getElementById("archivoMusica");
 
-    if (evento.key === "Enter") {
+const audioMusica =
+    document.getElementById("audioMusica");
 
-        botonRepetir.click();
+const nombreCancion =
+    document.getElementById("nombreCancion");
 
+const reproducirMusica =
+    document.getElementById("reproducirMusica");
+
+const pausarMusica =
+    document.getElementById("pausarMusica");
+
+const detenerMusica =
+    document.getElementById("detenerMusica");
+
+const volumen =
+    document.getElementById("volumen");
+
+
+let archivoSeleccionado = null;
+
+
+// ==============================
+// SELECCIONAR CANCIÓN
+// ==============================
+
+archivoMusica.addEventListener(
+    "change",
+    function () {
+
+        const archivo =
+            archivoMusica.files[0];
+
+        if (!archivo) {
+            return;
+        }
+
+
+        archivoSeleccionado = archivo;
+
+
+        const url =
+            URL.createObjectURL(archivo);
+
+        audioMusica.src = url;
+
+
+        nombreCancion.textContent =
+            `🎵 ${archivo.name}`;
+
+
+        despertar();
+
+        mensaje.textContent =
+            "🎵 Canción seleccionada";
+
+
+        reiniciarTemporizador();
     }
-
-});
+);
 
 
 // ==============================
-// INICIAR
+// REPRODUCIR
 // ==============================
 
-iniciarTemporizadorDormido();
+reproducirMusica.addEventListener(
+    "click",
+    function () {
+
+        if (!archivoSeleccionado) {
+
+            mensaje.textContent =
+                "🎵 Primero selecciona una canción";
+
+            return;
+        }
+
+
+        despertar();
+
+        audioMusica.play();
+
+        mensaje.textContent =
+            `🎵 Reproduciendo: ${archivoSeleccionado.name}`;
+
+        reiniciarTemporizador();
+    }
+);
+
+
+// ==============================
+// PAUSAR
+// ==============================
+
+pausarMusica.addEventListener(
+    "click",
+    function () {
+
+        audioMusica.pause();
+
+        despertar();
+
+        mensaje.textContent =
+            "⏸️ Música pausada";
+
+        reiniciarTemporizador();
+    }
+);
+
+
+// ==============================
+// DETENER
+// ==============================
+
+detenerMusica.addEventListener(
+    "click",
+    function () {
+
+        audioMusica.pause();
+
+        audioMusica.currentTime = 0;
+
+        despertar();
+
+        mensaje.textContent =
+            "⏹️ Música detenida";
+
+        reiniciarTemporizador();
+    }
+);
+
+
+// ==============================
+// VOLUMEN
+// ==============================
+
+volumen.addEventListener(
+    "input",
+    function () {
+
+        audioMusica.volume =
+            volumen.value;
+    }
+);
+
+
+// ==============================
+// INICIAR TEMPORIZADOR
+// ==============================
+
+reiniciarTemporizador();
