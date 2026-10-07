@@ -1,0 +1,369 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    min-height: 100vh;
+    background: #0b1020;
+    color: white;
+    font-family: Arial, sans-serif;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    padding: 30px;
+}
+
+/* CONTENEDOR PRINCIPAL */
+
+.contenedor {
+    width: 500px;
+    min-height: 600px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    text-align: center;
+}
+
+/* ROBOT */
+
+.robot {
+    width: 220px;
+    height: 180px;
+
+    background: #3d4b66;
+
+    border-radius: 45px;
+
+    position: relative;
+
+    box-shadow:
+        0 0 25px rgba(0, 200, 255, 0.5);
+
+    transition: 0.3s;
+}
+
+/* OJOS */
+
+.ojo {
+    width: 42px;
+    height: 42px;
+
+    background: #00eaff;
+
+    border-radius: 50%;
+
+    position: absolute;
+
+    top: 45px;
+
+    box-shadow:
+        0 0 15px #00eaff;
+}
+
+.ojo-izquierdo {
+    left: 45px;
+}
+
+.ojo-derecho {
+    right: 45px;
+}
+
+/* BOCA */
+
+.boca {
+    width: 75px;
+    height: 15px;
+
+    background: #00eaff;
+
+    border-radius: 20px;
+
+    position: absolute;
+
+    bottom: 35px;
+    left: 50%;
+
+    transform: translateX(-50%);
+
+    box-shadow:
+        0 0 12px #00eaff;
+}
+
+/* TITULO */
+
+h1 {
+    margin-top: 30px;
+
+    font-size: 36px;
+
+    letter-spacing: 3px;
+
+    color: #00eaff;
+
+    text-shadow:
+        0 0 10px #00eaff;
+}
+
+/* MENSAJE */
+
+#mensaje {
+    margin-top: 20px;
+
+    font-size: 20px;
+
+    min-height: 30px;
+
+    max-width: 450px;
+}
+
+/* BOTONES */
+
+button {
+    border: none;
+
+    border-radius: 12px;
+
+    padding: 13px 22px;
+
+    margin-top: 20px;
+
+    background: #00a8ff;
+
+    color: white;
+
+    font-size: 16px;
+
+    font-weight: bold;
+
+    cursor: pointer;
+
+    transition: 0.2s;
+}
+
+button:hover {
+    transform: scale(1.05);
+
+    background: #00d9ff;
+
+    box-shadow:
+        0 0 15px rgba(0, 217, 255, 0.7);
+}
+
+button:active {
+    transform: scale(0.97);
+}
+
+/* ZONA PARA ESCRIBIR */
+
+.zona-escribir {
+    width: 100%;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    gap: 10px;
+
+    margin-top: 10px;
+}
+
+#textoRepetir {
+    width: 280px;
+
+    padding: 13px;
+
+    border: 2px solid #263957;
+
+    border-radius: 12px;
+
+    background: #151d30;
+
+    color: white;
+
+    outline: none;
+
+    font-size: 15px;
+}
+
+#textoRepetir:focus {
+    border-color: #00eaff;
+
+    box-shadow:
+        0 0 10px rgba(0, 234, 255, 0.4);
+}
+
+#textoRepetir::placeholder {
+    color: #8893a8;
+}
+
+/* CUADRO DE FUNCIONES */
+
+.funciones {
+    position: fixed;
+
+    right: 30px;
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    width: 300px;
+
+    padding: 25px;
+
+    background: rgba(21, 29, 48, 0.95);
+
+    border: 2px solid #00eaff;
+
+    border-radius: 20px;
+
+    box-shadow:
+        0 0 25px rgba(0, 234, 255, 0.25);
+
+    backdrop-filter: blur(8px);
+}
+
+.funciones h2 {
+    color: #00eaff;
+
+    font-size: 21px;
+
+    margin-bottom: 18px;
+
+    text-align: center;
+}
+
+.funciones ul {
+    list-style: none;
+}
+
+.funciones li {
+    padding: 9px 0;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+    font-size: 15px;
+
+    line-height: 1.3;
+}
+
+.funciones li:last-child {
+    border-bottom: none;
+}
+
+/* ROBOT DORMIDO */
+
+.robot.dormido {
+    opacity: 0.45;
+
+    filter: grayscale(0.8);
+
+    transform: scale(0.95);
+}
+
+.robot.dormido .ojo,
+.robot.dormido .boca {
+    box-shadow: none;
+
+    background: #667085;
+}
+
+/* ADAPTACIÓN PARA CELULARES */
+
+@media (max-width: 1000px) {
+
+    body {
+        flex-direction: column;
+
+        padding: 20px;
+    }
+
+    .contenedor {
+        width: 100%;
+
+        min-height: auto;
+
+        margin-bottom: 30px;
+    }
+
+    .funciones {
+        position: static;
+
+        transform: none;
+
+        width: min(500px, 100%);
+
+        margin: 0 auto;
+    }
+}
+
+/* CELULARES PEQUEÑOS */
+
+@media (max-width: 600px) {
+
+    body {
+        padding: 15px;
+    }
+
+    .robot {
+        width: 180px;
+        height: 150px;
+    }
+
+    .ojo {
+        width: 34px;
+        height: 34px;
+
+        top: 38px;
+    }
+
+    .ojo-izquierdo {
+        left: 36px;
+    }
+
+    .ojo-derecho {
+        right: 36px;
+    }
+
+    .boca {
+        width: 60px;
+
+        bottom: 28px;
+    }
+
+    h1 {
+        font-size: 28px;
+    }
+
+    #mensaje {
+        font-size: 17px;
+    }
+
+    .zona-escribir {
+        flex-direction: column;
+    }
+
+    #textoRepetir {
+        width: 100%;
+    }
+
+    .funciones {
+        padding: 20px;
+    }
+
+    .funciones h2 {
+        font-size: 19px;
+    }
+
+    .funciones li {
+        font-size: 14px;
+    }
+}
