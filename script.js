@@ -43,6 +43,7 @@ if (SpeechRecognition) {
     reconocimiento.continuous = false;
     reconocimiento.interimResults = false;
 
+
     reconocimiento.onstart = function () {
 
         despertar();
@@ -59,43 +60,12 @@ if (SpeechRecognition) {
             evento.results[0][0].transcript;
 
         const textoMinusculas =
-            texto.toLowerCase();
+            texto
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "");
 
         console.log("Usuario:", texto);
-
-
-        // TACHI DEBE SER MENCIONADO
-
-        if (!textoMinusculas.includes("tachi")) {
-
-            mensaje.textContent =
-                "👂 No me llamaste";
-
-            reiniciarTemporizador();
-
-            return;
-        }
-
-
-        // ==============================
-        // EXPRESIONES
-        // ==============================
-
-        if (
-            textoMinusculas.includes("wow") ||
-            textoMinusculas.includes("sorpresa") ||
-            textoMinusculas.includes("increible") ||
-            textoMinusculas.includes("increíble") ||
-            textoMinusculas.includes("que paso") ||
-            textoMinusculas.includes("qué pasó")
-        ) {
-
-            mensaje.textContent = "😲";
-
-        } else {
-
-            mensaje.textContent = "😊";
-        }
 
 
         // ==============================
@@ -103,7 +73,9 @@ if (SpeechRecognition) {
         // ==============================
 
         if (
-            textoMinusculas.includes("hora")
+            textoMinusculas.includes("hora") ||
+            textoMinusculas.includes("que hora es") ||
+            textoMinusculas.includes("dime la hora")
         ) {
 
             const ahora = new Date();
@@ -115,27 +87,31 @@ if (SpeechRecognition) {
                     .toString()
                     .padStart(2, "0");
 
+            const periodo =
+                horas >= 12 ? "PM" : "AM";
+
             horas = horas % 12 || 12;
 
             const respuesta =
-                `Son las ${horas}:${minutos}`;
+                `Son las ${horas}:${minutos} ${periodo}`;
 
             mensaje.textContent =
                 `🕐 ${respuesta}`;
 
             hablar(respuesta);
-
         }
 
 
         // ==============================
-        // FECHA
+        // FECHA / DÍA
         // ==============================
 
         else if (
             textoMinusculas.includes("fecha") ||
-            textoMinusculas.includes("día") ||
-            textoMinusculas.includes("dia")
+            textoMinusculas.includes("que dia es") ||
+            textoMinusculas.includes("que dia es hoy") ||
+            textoMinusculas.includes("dime el dia") ||
+            textoMinusculas.includes("dime la fecha")
         ) {
 
             const fecha = new Date();
@@ -161,20 +137,40 @@ if (SpeechRecognition) {
 
 
         // ==============================
+        // CÓMO ESTÁ
+        // ==============================
+
+        else if (
+            textoMinusculas.includes("como estas") ||
+            textoMinusculas.includes("como esta") ||
+            textoMinusculas.includes("como te sientes") ||
+            textoMinusculas.includes("estas bien") ||
+            textoMinusculas.includes("te sientes bien")
+        ) {
+
+            const respuesta =
+                "Estoy muy bien, gracias por preguntar. ¿En qué puedo ayudarte?";
+
+            mensaje.textContent =
+                `😊 ${respuesta}`;
+
+            hablar(respuesta);
+        }
+
+
+        // ==============================
         // HOLA
         // ==============================
 
         else if (
-            textoMinusculas.includes("hola") ||
-            textoMinusculas.includes("cómo estás") ||
-            textoMinusculas.includes("como estas")
+            textoMinusculas.includes("hola")
         ) {
 
             const respuesta =
-                "Bien gracias por preguntar, ¿en qué puedo ayudarte?";
+                "Hola, ¿en qué puedo ayudarte?";
 
             mensaje.textContent =
-                `😊 ${respuesta}`;
+                `👋 ${respuesta}`;
 
             hablar(respuesta);
         }
@@ -185,7 +181,6 @@ if (SpeechRecognition) {
         // ==============================
 
         else if (
-            textoMinusculas.includes("buenos días") ||
             textoMinusculas.includes("buenos dias")
         ) {
 
