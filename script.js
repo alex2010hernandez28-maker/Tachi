@@ -40,6 +40,7 @@ const zonaRespuesta = document.getElementById("zonaRespuesta");
 let puntos = 0;
 let estadoActual = "normal";
 let temporizadorDormir;
+let vozActiva = null;
 
 const rostrosTachi = {
   normal: "tachi-normal.png",
@@ -98,21 +99,56 @@ function cambiarEstado(estado) {
 function hablar(texto) {
   if (!texto) return;
 
+  if (!("speechSynthesis" in window)) {
+    console.log("Speech Synthesis no está disponible.");
+    return;
+  }
+
+  clearTimeout(temporizadorDormir);
+
   speechSynthesis.cancel();
 
   cambiarEstado("hablando");
 
-  const voz = new SpeechSynthesisUtterance(texto);
+  const voz = new SpeechSynthesisUtterance(String(texto));
+
   voz.lang = "es-SV";
   voz.rate = 1;
   voz.pitch = 1;
+  voz.volume = 1;
 
   voz.onend = () => {
+    vozActiva = null;
+
+    if (estadoActual === "hablando") {
+      cambiarEstado("normal");
+    }
+
+    iniciarTemporizadorDormir();
+  };
+
+  voz.onerror = evento => {
+    console.log("Error de voz:", evento);
+
+    vozActiva = null;
+
     cambiarEstado("normal");
     iniciarTemporizadorDormir();
   };
 
-  speechSynthesis.speak(voz);
+  vozActiva = voz;
+
+  /*
+    Esperamos un momento después de cancel()
+    porque algunos navegadores móviles pueden
+    cancelar también la nueva voz si se ejecuta
+    inmediatamente.
+  */
+  setTimeout(() => {
+    if (vozActiva === voz) {
+      speechSynthesis.speak(voz);
+    }
+  }, 100);
 }
 
 /* =========================
@@ -121,7 +157,10 @@ function hablar(texto) {
 
 function despertarRobot() {
   clearTimeout(temporizadorDormir);
-  cambiarEstado("normal");
+
+  if (estadoActual === "dormido") {
+    cambiarEstado("normal");
+  }
 }
 
 function dormirRobot() {
@@ -148,11 +187,16 @@ repetirBtn.addEventListener("click", () => {
   const texto = textoRepetir.value.trim();
 
   if (!texto) {
+    respuestaVoz.textContent =
+      "Escribe algo para que pueda repetirlo.";
+
     hablar("Escribe algo para que pueda repetirlo.");
     return;
   }
 
-  respuestaVoz.textContent = texto;
+  respuestaVoz.textContent =
+    `Tachi: ${texto}`;
+
   hablar(texto);
 });
 
@@ -182,20 +226,27 @@ if (SpeechRecognition) {
   recognition.onstart = () => {
     despertarRobot();
     cambiarEstado("escuchando");
-    respuestaVoz.textContent = "🎤 Te escucho...";
+
+    respuestaVoz.textContent =
+      "🎤 Te escucho...";
   };
 
   recognition.onresult = evento => {
-    const texto = evento.results[0][0].transcript;
+    const texto =
+      evento.results[0][0].transcript;
 
-    respuestaVoz.textContent = `Tú: ${texto}`;
+    respuestaVoz.textContent =
+      `Tú: ${texto}`;
 
     procesarComando(texto);
   };
 
   recognition.onerror = () => {
     cambiarEstado("normal");
-    respuestaVoz.textContent = "No pude entenderte 😕";
+
+    respuestaVoz.textContent =
+      "No pude entenderte 😕";
+
     iniciarTemporizadorDormir();
   };
 
@@ -212,6 +263,7 @@ hablarBtn.addEventListener("click", () => {
   if (!recognition) {
     respuestaVoz.textContent =
       "Tu navegador no permite reconocimiento de voz.";
+
     return;
   }
 
@@ -220,7 +272,9 @@ hablarBtn.addEventListener("click", () => {
   try {
     recognition.start();
   } catch (error) {
-    console.log("El reconocimiento ya estaba activo.");
+    console.log(
+      "El reconocimiento ya estaba activo."
+    );
   }
 });
 
@@ -229,7 +283,8 @@ hablarBtn.addEventListener("click", () => {
 ========================= */
 
 function procesarComando(textoOriginal) {
-  const texto = textoOriginal.toLowerCase().trim();
+  const texto =
+    textoOriginal.toLowerCase().trim();
 
   despertarRobot();
 
@@ -241,15 +296,22 @@ function procesarComando(textoOriginal) {
     const ahora = new Date();
 
     let hora = ahora.getHours();
-    const minutos = String(ahora.getMinutes()).padStart(2, "0");
+    const minutos =
+      String(ahora.getMinutes()).padStart(2, "0");
 
-    const periodo = hora >= 12 ? "PM" : "AM";
+    const periodo =
+      hora >= 12 ? "PM" : "AM";
 
     hora = hora % 12;
 
-    if (hora === 0) hora = 12;
+    if (hora === 0) {
+      hora = 12;
+    }
 
-    hablar(`Son las ${hora}:${minutos} ${periodo}.`);
+    hablar(
+      `Son las ${hora}:${minutos} ${periodo}.`
+    );
+
     return;
   }
 
@@ -261,14 +323,16 @@ function procesarComando(textoOriginal) {
   ) {
     const fecha = new Date();
 
-    const fechaTexto = fecha.toLocaleDateString("es-SV", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric"
-    });
+    const fechaTexto =
+      fecha.toLocaleDateString("es-SV", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric"
+      });
 
     hablar(`Hoy es ${fechaTexto}.`);
+
     return;
   }
 
@@ -280,7 +344,11 @@ function procesarComando(textoOriginal) {
     texto.includes("buenas noches")
   ) {
     cambiarEstado("feliz");
-    hablar("¡Hola! Me alegra escucharte.");
+
+    hablar(
+      "¡Hola! Me alegra escucharte."
+    );
+
     return;
   }
 
@@ -289,7 +357,11 @@ function procesarComando(textoOriginal) {
     texto.includes("como estas")
   ) {
     cambiarEstado("feliz");
-    hablar("Estoy funcionando perfectamente y listo para ayudarte.");
+
+    hablar(
+      "Estoy funcionando perfectamente y listo para ayudarte."
+    );
+
     return;
   }
 
@@ -298,7 +370,10 @@ function procesarComando(textoOriginal) {
     texto.includes("adios") ||
     texto.includes("hasta luego")
   ) {
-    hablar("Hasta luego. Nos vemos pronto.");
+    hablar(
+      "Hasta luego. Nos vemos pronto."
+    );
+
     return;
   }
 
@@ -321,12 +396,15 @@ function procesarComando(textoOriginal) {
 
     for (const prefijo of prefijos) {
       if (pregunta.startsWith(prefijo)) {
-        pregunta = pregunta.slice(prefijo.length).trim();
+        pregunta =
+          pregunta.slice(prefijo.length).trim();
+
         break;
       }
     }
 
     investigarEnInternet(pregunta);
+
     return;
   }
 
@@ -335,6 +413,7 @@ function procesarComando(textoOriginal) {
     texto.includes("sorprendeme")
   ) {
     sorpresa();
+
     return;
   }
 
@@ -344,6 +423,7 @@ function procesarComando(textoOriginal) {
     texto.includes("quiero una trivia")
   ) {
     iniciarTrivia();
+
     return;
   }
 
@@ -352,6 +432,7 @@ function procesarComando(textoOriginal) {
     texto.includes("dime una adivinanza")
   ) {
     iniciarAdivinanza();
+
     return;
   }
 
@@ -361,6 +442,7 @@ function procesarComando(textoOriginal) {
     texto === "chiste"
   ) {
     contarChiste();
+
     return;
   }
 
@@ -369,6 +451,7 @@ function procesarComando(textoOriginal) {
     texto.includes("piedra papel tijera")
   ) {
     iniciarPiedraPapelTijera();
+
     return;
   }
 
@@ -376,11 +459,11 @@ function procesarComando(textoOriginal) {
     texto.includes("resolver") &&
     texto.length > 9
   ) {
-    const operacion = texto
-      .replace("resolver", "")
-      .trim();
+    const operacion =
+      texto.replace("resolver", "").trim();
 
     resolverMatematica(operacion);
+
     return;
   }
 
@@ -416,8 +499,11 @@ async function investigarEnInternet(pregunta) {
       "&format=json" +
       "&origin=*";
 
-    const respuesta = await fetch(urlBusqueda);
-    const datos = await respuesta.json();
+    const respuesta =
+      await fetch(urlBusqueda);
+
+    const datos =
+      await respuesta.json();
 
     if (
       !datos.query ||
@@ -428,11 +514,16 @@ async function investigarEnInternet(pregunta) {
         "No encontré información suficiente.";
 
       cambiarEstado("sorprendido");
-      hablar("No encontré información suficiente sobre eso.");
+
+      hablar(
+        "No encontré información suficiente sobre eso."
+      );
+
       return;
     }
 
-    const titulo = datos.query.search[0].title;
+    const titulo =
+      datos.query.search[0].title;
 
     const urlArticulo =
       "https://es.wikipedia.org/w/api.php" +
@@ -446,11 +537,17 @@ async function investigarEnInternet(pregunta) {
       "&format=json" +
       "&origin=*";
 
-    const respuestaArticulo = await fetch(urlArticulo);
-    const datosArticulo = await respuestaArticulo.json();
+    const respuestaArticulo =
+      await fetch(urlArticulo);
 
-    const paginas = datosArticulo.query.pages;
-    const pagina = Object.values(paginas)[0];
+    const datosArticulo =
+      await respuestaArticulo.json();
+
+    const paginas =
+      datosArticulo.query.pages;
+
+    const pagina =
+      Object.values(paginas)[0];
 
     const extracto =
       pagina.extract ||
@@ -462,7 +559,8 @@ async function investigarEnInternet(pregunta) {
       ${escapeHTML(extracto)}
     `;
 
-    const textoVoz = resumirParaVoz(extracto);
+    const textoVoz =
+      resumirParaVoz(extracto);
 
     hablar(
       `Encontré información sobre ${titulo}. ${textoVoz}`
@@ -507,35 +605,43 @@ investigarBtn.addEventListener("click", () => {
   );
 });
 
-preguntaInvestigacion.addEventListener("keydown", evento => {
-  if (evento.key === "Enter") {
-    investigarBtn.click();
+preguntaInvestigacion.addEventListener(
+  "keydown",
+  evento => {
+    if (evento.key === "Enter") {
+      investigarBtn.click();
+    }
   }
-});
+);
 
-abrirBusquedaBtn.addEventListener("click", () => {
-  const pregunta =
-    preguntaInvestigacion.value.trim();
+abrirBusquedaBtn.addEventListener(
+  "click",
+  () => {
+    const pregunta =
+      preguntaInvestigacion.value.trim();
 
-  if (!pregunta) return;
+    if (!pregunta) return;
 
-  window.open(
-    "https://www.google.com/search?q=" +
-    encodeURIComponent(pregunta),
-    "_blank"
-  );
-});
+    window.open(
+      "https://www.google.com/search?q=" +
+      encodeURIComponent(pregunta),
+      "_blank"
+    );
+  }
+);
 
 /* =========================
    MATEMÁTICAS
 ========================= */
 
 function resolverMatematica(entrada) {
-  const texto = entrada.trim().toLowerCase();
+  const texto =
+    entrada.trim().toLowerCase();
 
   if (!texto) {
     resultadoMatematico.textContent =
       "Escribe una operación o ecuación.";
+
     return;
   }
 
@@ -555,64 +661,75 @@ function resolverMatematica(entrada) {
       a = Number(a);
     }
 
-    const operador = ecuacionLineal[2];
-    const b = Number(ecuacionLineal[3]);
-    const c = Number(ecuacionLineal[4]);
+    const operador =
+      ecuacionLineal[2];
+
+    const b =
+      Number(ecuacionLineal[3]);
+
+    const c =
+      Number(ecuacionLineal[4]);
+
+    let resultado;
 
     if (operador === "-") {
-      const resultado = (c + b) / a;
-
-      resultadoMatematico.textContent =
-        `x = ${resultado}`;
-
-      hablar(`La respuesta es x igual a ${resultado}.`);
-      return;
+      resultado = (c + b) / a;
+    } else {
+      resultado = (c - b) / a;
     }
-
-    const resultado = (c - b) / a;
 
     resultadoMatematico.textContent =
       `x = ${resultado}`;
 
-    hablar(`La respuesta es x igual a ${resultado}.`);
+    hablar(
+      `La respuesta es x igual a ${resultado}.`
+    );
+
     return;
   }
 
-  let expresion = texto
-    .replaceAll("×", "*")
-    .replaceAll("÷", "/")
-    .replaceAll(",", ".")
-    .replace(/\s+/g, "");
+  let expresion =
+    texto
+      .replaceAll("×", "*")
+      .replaceAll("÷", "/")
+      .replaceAll(",", ".")
+      .replace(/\s+/g, "");
 
-  expresion = expresion.replace(
-    /(\d)\s*x\s*(\d)/g,
-    "$1*$2"
-  );
+  expresion =
+    expresion.replace(
+      /(\d)\s*x\s*(\d)/g,
+      "$1*$2"
+    );
 
-  expresion = expresion.replace(
-    /(\d)\s*x/g,
-    "$1*"
-  );
+  expresion =
+    expresion.replace(
+      /(\d)\s*x/g,
+      "$1*"
+    );
 
-  expresion = expresion.replace(
-    /x\s*(\d)/g,
-    "*$1"
-  );
+  expresion =
+    expresion.replace(
+      /x\s*(\d)/g,
+      "*$1"
+    );
 
-  expresion = expresion.replace(
-    /(\d+)%/g,
-    "($1/100)"
-  );
+  expresion =
+    expresion.replace(
+      /(\d+)%/g,
+      "($1/100)"
+    );
 
-  expresion = expresion.replace(
-    /(\d+(?:\.\d+)?)\^(\d+(?:\.\d+)?)/g,
-    "Math.pow($1,$2)"
-  );
+  expresion =
+    expresion.replace(
+      /(\d+(?:\.\d+)?)\^(\d+(?:\.\d+)?)/g,
+      "Math.pow($1,$2)"
+    );
 
-  expresion = expresion.replace(
-    /√(\d+(?:\.\d+)?)/g,
-    "Math.sqrt($1)"
-  );
+  expresion =
+    expresion.replace(
+      /√(\d+(?:\.\d+)?)/g,
+      "Math.sqrt($1)"
+    );
 
   if (
     !/^[0-9+\-*/().,%Mathpowsqrt]+$/.test(
@@ -630,21 +747,26 @@ function resolverMatematica(entrada) {
   }
 
   try {
-    const resultado = Function(
-      `"use strict"; return (${expresion})`
-    )();
+    const resultado =
+      Function(
+        `"use strict"; return (${expresion})`
+      )();
 
     if (
       typeof resultado !== "number" ||
       !Number.isFinite(resultado)
     ) {
-      throw new Error("Resultado inválido");
+      throw new Error(
+        "Resultado inválido"
+      );
     }
 
     resultadoMatematico.textContent =
       `Resultado: ${resultado}`;
 
-    hablar(`El resultado es ${resultado}.`);
+    hablar(
+      `El resultado es ${resultado}.`
+    );
 
   } catch (error) {
     resultadoMatematico.textContent =
@@ -656,51 +778,78 @@ function resolverMatematica(entrada) {
   }
 }
 
-resolverBtn.addEventListener("click", () => {
-  despertarRobot();
-  resolverMatematica(ecuacion.value);
-});
+resolverBtn.addEventListener(
+  "click",
+  () => {
+    despertarRobot();
 
-ecuacion.addEventListener("keydown", evento => {
-  if (evento.key === "Enter") {
-    resolverBtn.click();
+    resolverMatematica(
+      ecuacion.value
+    );
   }
-});
+);
+
+ecuacion.addEventListener(
+  "keydown",
+  evento => {
+    if (evento.key === "Enter") {
+      resolverBtn.click();
+    }
+  }
+);
 
 /* =========================
    MÚSICA
 ========================= */
 
-archivoMusica.addEventListener("change", () => {
-  const archivo = archivoMusica.files[0];
+archivoMusica.addEventListener(
+  "change",
+  () => {
+    const archivo =
+      archivoMusica.files[0];
 
-  if (!archivo) return;
+    if (!archivo) return;
 
-  reproductor.src =
-    URL.createObjectURL(archivo);
+    reproductor.src =
+      URL.createObjectURL(archivo);
 
-  reproductor.load();
+    reproductor.load();
 
-  hablar(`He cargado ${archivo.name}.`);
-});
+    hablar(
+      `He cargado ${archivo.name}.`
+    );
+  }
+);
 
-playMusica.addEventListener("click", () => {
-  reproductor.play();
-});
+playMusica.addEventListener(
+  "click",
+  () => {
+    reproductor.play();
+  }
+);
 
-pausaMusica.addEventListener("click", () => {
-  reproductor.pause();
-});
+pausaMusica.addEventListener(
+  "click",
+  () => {
+    reproductor.pause();
+  }
+);
 
-stopMusica.addEventListener("click", () => {
-  reproductor.pause();
-  reproductor.currentTime = 0;
-});
+stopMusica.addEventListener(
+  "click",
+  () => {
+    reproductor.pause();
+    reproductor.currentTime = 0;
+  }
+);
 
-volumenMusica.addEventListener("input", () => {
-  reproductor.volume =
-    Number(volumenMusica.value);
-});
+volumenMusica.addEventListener(
+  "input",
+  () => {
+    reproductor.volume =
+      Number(volumenMusica.value);
+  }
+);
 
 /* =========================
    ENTRETENIMIENTO
@@ -716,42 +865,51 @@ const chistes = [
 
 const adivinanzas = [
   {
-    pregunta: "Tengo agujas y no sé coser. ¿Qué soy?",
+    pregunta:
+      "Tengo agujas y no sé coser. ¿Qué soy?",
     respuesta: "reloj"
   },
   {
-    pregunta: "Cuanto más me quitas, más grande me hago. ¿Qué soy?",
+    pregunta:
+      "Cuanto más me quitas, más grande me hago. ¿Qué soy?",
     respuesta: "agujero"
   },
   {
-    pregunta: "Tengo dientes pero no puedo morder. ¿Qué soy?",
+    pregunta:
+      "Tengo dientes pero no puedo morder. ¿Qué soy?",
     respuesta: "peine"
   },
   {
-    pregunta: "Vuelo sin alas y lloro sin ojos. ¿Qué soy?",
+    pregunta:
+      "Vuelo sin alas y lloro sin ojos. ¿Qué soy?",
     respuesta: "nube"
   }
 ];
 
 const trivias = [
   {
-    pregunta: "¿Cuál es el planeta más grande del sistema solar?",
+    pregunta:
+      "¿Cuál es el planeta más grande del sistema solar?",
     respuesta: "jupiter"
   },
   {
-    pregunta: "¿Cuántos continentes hay en el modelo de siete continentes?",
+    pregunta:
+      "¿Cuántos continentes hay en el modelo de siete continentes?",
     respuesta: "7"
   },
   {
-    pregunta: "¿Cuál es el océano más grande?",
+    pregunta:
+      "¿Cuál es el océano más grande?",
     respuesta: "pacifico"
   },
   {
-    pregunta: "¿Qué animal es conocido como el rey de la selva?",
+    pregunta:
+      "¿Qué animal es conocido como el rey de la selva?",
     respuesta: "leon"
   },
   {
-    pregunta: "¿Cuántos lados tiene un hexágono?",
+    pregunta:
+      "¿Cuántos lados tiene un hexágono?",
     respuesta: "6"
   }
 ];
@@ -761,12 +919,18 @@ let tipoPreguntaActual = null;
 
 function actualizarPuntos(cantidad) {
   puntos += cantidad;
-  puntosTexto.textContent = puntos;
+
+  puntosTexto.textContent =
+    puntos;
 }
 
 function iniciarTrivia() {
   const trivia =
-    trivias[Math.floor(Math.random() * trivias.length)];
+    trivias[
+      Math.floor(
+        Math.random() * trivias.length
+      )
+    ];
 
   preguntaActual = trivia;
   tipoPreguntaActual = "trivia";
@@ -776,7 +940,9 @@ function iniciarTrivia() {
   resultadoJuego.textContent =
     `🧠 ${trivia.pregunta}`;
 
-  zonaRespuesta.classList.remove("oculto");
+  zonaRespuesta.classList.remove(
+    "oculto"
+  );
 
   hablar(trivia.pregunta);
 }
@@ -784,18 +950,26 @@ function iniciarTrivia() {
 function iniciarAdivinanza() {
   const adivinanza =
     adivinanzas[
-      Math.floor(Math.random() * adivinanzas.length)
+      Math.floor(
+        Math.random() *
+        adivinanzas.length
+      )
     ];
 
   preguntaActual = adivinanza;
-  tipoPreguntaActual = "adivinanza";
+  tipoPreguntaActual =
+    "adivinanza";
 
-  cambiarEstado("sorprendido");
+  cambiarEstado(
+    "sorprendido"
+  );
 
   resultadoJuego.textContent =
     `🧩 ${adivinanza.pregunta}`;
 
-  zonaRespuesta.classList.remove("oculto");
+  zonaRespuesta.classList.remove(
+    "oculto"
+  );
 
   hablar(adivinanza.pregunta);
 }
@@ -803,7 +977,9 @@ function iniciarAdivinanza() {
 function contarChiste() {
   const chiste =
     chistes[
-      Math.floor(Math.random() * chistes.length)
+      Math.floor(
+        Math.random() * chistes.length
+      )
     ];
 
   cambiarEstado("feliz");
@@ -817,16 +993,25 @@ function contarChiste() {
 function iniciarPiedraPapelTijera() {
   cambiarEstado("feliz");
 
-  opcionesPPT.classList.remove("oculto");
-  zonaRespuesta.classList.add("oculto");
+  opcionesPPT.classList.remove(
+    "oculto"
+  );
+
+  zonaRespuesta.classList.add(
+    "oculto"
+  );
 
   resultadoJuego.textContent =
     "✊ Elige piedra, papel o tijera.";
 
-  hablar("Elige piedra, papel o tijera.");
+  hablar(
+    "Elige piedra, papel o tijera."
+  );
 }
 
-function jugarPPT(eleccionUsuario) {
+function jugarPPT(
+  eleccionUsuario
+) {
   const opciones = [
     "piedra",
     "papel",
@@ -835,13 +1020,19 @@ function jugarPPT(eleccionUsuario) {
 
   const eleccionTachi =
     opciones[
-      Math.floor(Math.random() * opciones.length)
+      Math.floor(
+        Math.random() * opciones.length
+      )
     ];
 
   let resultado;
 
-  if (eleccionUsuario === eleccionTachi) {
+  if (
+    eleccionUsuario ===
+    eleccionTachi
+  ) {
     resultado = "Empate.";
+
   } else if (
     (eleccionUsuario === "piedra" &&
       eleccionTachi === "tijera") ||
@@ -850,12 +1041,20 @@ function jugarPPT(eleccionUsuario) {
     (eleccionUsuario === "tijera" &&
       eleccionTachi === "papel")
   ) {
-    resultado = "¡Ganaste! +10 puntos.";
+    resultado =
+      "¡Ganaste! +10 puntos.";
+
     actualizarPuntos(10);
+
     cambiarEstado("feliz");
+
   } else {
-    resultado = "Esta vez gané yo.";
-    cambiarEstado("sorprendido");
+    resultado =
+      "Esta vez gané yo.";
+
+    cambiarEstado(
+      "sorprendido"
+    );
   }
 
   resultadoJuego.textContent =
@@ -874,30 +1073,43 @@ function comprobarRespuesta() {
       .trim()
       .toLowerCase()
       .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
+      .replace(
+        /[\u0300-\u036f]/g,
+        ""
+      );
 
   const correcta =
     preguntaActual.respuesta
       .toLowerCase()
       .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
+      .replace(
+        /[\u0300-\u036f]/g,
+        ""
+      );
 
   if (respuesta === correcta) {
     actualizarPuntos(10);
+
     cambiarEstado("feliz");
 
     resultadoJuego.textContent =
       "🎉 ¡Correcto! Ganaste 10 puntos.";
 
-    hablar("¡Correcto! Ganaste 10 puntos.");
+    hablar(
+      "¡Correcto! Ganaste 10 puntos."
+    );
 
   } else {
-    cambiarEstado("sorprendido");
+    cambiarEstado(
+      "sorprendido"
+    );
 
     resultadoJuego.textContent =
       "❌ No es correcto. Inténtalo otra vez.";
 
-    hablar("No es correcto. Inténtalo otra vez.");
+    hablar(
+      "No es correcto. Inténtalo otra vez."
+    );
   }
 }
 
@@ -909,11 +1121,15 @@ function sorpresa() {
     iniciarPiedraPapelTijera
   ];
 
-  cambiarEstado("sorprendido");
+  cambiarEstado(
+    "sorprendido"
+  );
 
   const funcion =
     opciones[
-      Math.floor(Math.random() * opciones.length)
+      Math.floor(
+        Math.random() * opciones.length
+      )
     ];
 
   funcion();
@@ -959,13 +1175,18 @@ respuestaUsuario.addEventListener(
 );
 
 document
-  .querySelectorAll("#opcionesPPT button")
+  .querySelectorAll(
+    "#opcionesPPT button"
+  )
   .forEach(boton => {
-    boton.addEventListener("click", () => {
-      jugarPPT(
-        boton.dataset.eleccion
-      );
-    });
+    boton.addEventListener(
+      "click",
+      () => {
+        jugarPPT(
+          boton.dataset.eleccion
+        );
+      }
+    );
   });
 
 /* =========================
