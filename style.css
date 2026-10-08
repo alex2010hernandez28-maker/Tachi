@@ -566,3 +566,87 @@ h1 {
 }
 
 }
+
+/* =========================
+   INVESTIGACION
+========================= */
+
+.investigacion {
+    width: 100%;
+    margin-top: 25px;
+    padding: 22px;
+    background: #151d30;
+    border: 2px solid #263957;
+    border-radius: 18px;
+    box-shadow:
+        0 0 15px rgba(0, 234, 255, 0.15);
+}
+
+.investigacion h2 {
+    color: #00eaff;
+    margin-bottom: 10px;
+}
+
+.investigacion p {
+    color: #b8c2d4;
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+
+#preguntaInvestigacion {
+    width: 100%;
+    padding: 13px;
+    border: 2px solid #263957;
+    border-radius: 12px;
+    background: #0f1728;
+    color: white;
+    outline: none;
+    font-size: 16px;
+    text-align: center;
+}
+
+#preguntaInvestigacion:focus {
+    border-color: #00eaff;
+
+    box-shadow:
+        0 0 10px rgba(0, 234, 255, 0.4);
+}
+
+#preguntaInvestigacion::placeholder {
+    color: #8893a8;
+}
+
+#resultadoInvestigacion {
+    margin-top: 18px;
+    padding: 15px;
+    min-height: 50px;
+    background: #0f1728;
+    border-radius: 12px;
+    color: #dbe4f5;
+    font-size: 15px;
+    line-height: 1.5;
+    text-align: left;
+    word-break: break-word;
+}
+
+#resultadoInvestigacion strong {
+    display: block;
+    color: #00eaff;
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+#resultadoInvestigacion p {
+    color: #dbe4f5;
+    margin: 0;
+    font-size: 15px;
+}
+
+.boton-secundario {
+    background: #263957;
+    margin-top: 12px;
+}
+
+.boton-secundario:hover {
+    background: #3b5275;
+}
