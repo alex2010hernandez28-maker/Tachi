@@ -1,607 +1,247 @@
 * {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  }
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
 body {
-min-height: 100vh;
-background: #0b1020;
-color: white;
-font-family: Arial, sans-serif;
+    min-height: 100vh;
+    background: #0b1020;
+    color: white;
+    font-family: Arial, sans-serif;
 
-display: flex;
-justify-content: center;
-align-items: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 
-padding: 30px;
-
+    padding: 30px;
 }
 
 .contenedor {
-width: 500px;
-min-height: 600px;
+    width: 500px;
+    min-height: 600px;
 
-display: flex;
-flex-direction: column;
-align-items: center;
-justify-content: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 
-text-align: center;
-
+    text-align: center;
 }
 
 .robot {
-width: 220px;
-height: 180px;
+    width: 220px;
+    height: 180px;
 
-background: #3d4b66;
+    background: #3d4b66;
 
-border-radius: 45px;
+    border-radius: 45px;
 
-position: relative;
+    position: relative;
 
-box-shadow:
-    0 0 25px rgba(0, 200, 255, 0.5);
+    box-shadow:
+        0 0 25px rgba(0, 200, 255, 0.5);
 
-transition: 0.3s;
-
+    transition: 0.3s;
 }
 
 .ojo {
-width: 42px;
-height: 42px;
+    width: 42px;
+    height: 42px;
 
-background: #00eaff;
+    background: #00eaff;
 
-border-radius: 50%;
+    border-radius: 50%;
 
-position: absolute;
+    position: absolute;
 
-top: 45px;
+    top: 45px;
 
-box-shadow:
-    0 0 15px #00eaff;
-
+    box-shadow:
+        0 0 15px #00eaff;
 }
 
 .ojo-izquierdo {
-left: 45px;
+    left: 45px;
 }
 
 .ojo-derecho {
-right: 45px;
+    right: 45px;
 }
 
 .boca {
-width: 75px;
-height: 15px;
+    width: 75px;
+    height: 15px;
 
-background: #00eaff;
+    background: #00eaff;
 
-border-radius: 20px;
+    border-radius: 20px;
 
-position: absolute;
+    position: absolute;
 
-bottom: 35px;
-left: 50%;
+    bottom: 35px;
+    left: 50%;
 
-transform: translateX(-50%);
+    transform: translateX(-50%);
 
-box-shadow:
-    0 0 12px #00eaff;
-
+    box-shadow:
+        0 0 12px #00eaff;
 }
 
 h1 {
-margin-top: 30px;
+    margin-top: 30px;
 
-font-size: 36px;
+    font-size: 36px;
 
-letter-spacing: 3px;
+    letter-spacing: 3px;
 
-color: #00eaff;
+    color: #00eaff;
 
-text-shadow:
-    0 0 10px #00eaff;
-
+    text-shadow:
+        0 0 10px #00eaff;
 }
 
 #mensaje {
-margin-top: 20px;
+    margin-top: 20px;
 
-font-size: 20px;
+    font-size: 20px;
 
-min-height: 30px;
+    min-height: 30px;
 
-max-width: 450px;
-
+    max-width: 450px;
 }
 
 button {
-border: none;
+    border: none;
 
-border-radius: 12px;
+    border-radius: 12px;
 
-padding: 13px 22px;
+    padding: 13px 22px;
 
-margin-top: 20px;
+    margin-top: 20px;
 
-background: #00a8ff;
+    background: #00a8ff;
 
-color: white;
+    color: white;
 
-font-size: 16px;
+    font-size: 16px;
 
-font-weight: bold;
+    font-weight: bold;
 
-cursor: pointer;
+    cursor: pointer;
 
-transition: 0.2s;
-
+    transition: 0.2s;
 }
 
 button:hover {
-transform: scale(1.05);
+    transform: scale(1.05);
 
-background: #00d9ff;
+    background: #00d9ff;
 
-box-shadow:
-    0 0 15px rgba(0, 217, 255, 0.7);
-
+    box-shadow:
+        0 0 15px rgba(0, 217, 255, 0.7);
 }
 
 button:active {
-transform: scale(0.97);
+    transform: scale(0.97);
 }
 
 .zona-escribir {
-width: 100%;
+    width: 100%;
 
-display: flex;
+    display: flex;
 
-justify-content: center;
+    justify-content: center;
 
-align-items: center;
+    align-items: center;
 
-gap: 10px;
+    gap: 10px;
 
-margin-top: 10px;
-
+    margin-top: 10px;
 }
 
 #textoRepetir {
-width: 280px;
+    width: 280px;
 
-padding: 13px;
+    padding: 13px;
 
-border: 2px solid #263957;
+    border: 2px solid #263957;
 
-border-radius: 12px;
+    border-radius: 12px;
 
-background: #151d30;
+    background: #151d30;
 
-color: white;
+    color: white;
 
-outline: none;
+    outline: none;
 
-font-size: 15px;
-
+    font-size: 15px;
 }
 
 #textoRepetir:focus {
-border-color: #00eaff;
+    border-color: #00eaff;
 
-box-shadow:
-    0 0 10px rgba(0, 234, 255, 0.4);
-
+    box-shadow:
+        0 0 10px rgba(0, 234, 255, 0.4);
 }
 
 #textoRepetir::placeholder {
-color: #8893a8;
+    color: #8893a8;
 }
+
 
 /* =========================
-MATEMÁTICAS
-========================= */
-
-.matematicas {
-width: 100%;
-
-margin-top: 25px;
-
-padding: 22px;
-
-background: #151d30;
-
-border: 2px solid #263957;
-
-border-radius: 18px;
-
-box-shadow:
-    0 0 15px rgba(0, 234, 255, 0.15);
-
-}
-
-.matematicas h2 {
-color: #00eaff;
-
-margin-bottom: 10px;
-
-}
-
-.matematicas p {
-color: #b8c2d4;
-
-font-size: 14px;
-
-margin-bottom: 15px;
-
-}
-
-#ecuacion {
-width: 100%;
-
-padding: 13px;
-
-border: 2px solid #263957;
-
-border-radius: 12px;
-
-background: #0f1728;
-
-color: white;
-
-outline: none;
-
-font-size: 16px;
-
-text-align: center;
-
-}
-
-#ecuacion:focus {
-border-color: #00eaff;
-
-box-shadow:
-    0 0 10px rgba(0, 234, 255, 0.4);
-
-}
-
-#ecuacion::placeholder {
-color: #8893a8;
-}
-
-#resolver {
-margin-top: 12px;
-}
-
-#resultadoMatematico {
-margin-top: 18px;
-
-min-height: 25px;
-
-color: #00eaff;
-
-font-size: 19px;
-
-font-weight: bold;
-
-word-break: break-word;
-
-}
-
-/* =========================
-REPRODUCTOR
-========================= */
-
-.reproductor {
-width: 100%;
-
-margin-top: 25px;
-
-padding: 22px;
-
-background: #151d30;
-
-border: 2px solid #263957;
-
-border-radius: 18px;
-
-box-shadow:
-    0 0 15px rgba(0, 234, 255, 0.15);
-
-}
-
-.reproductor h2 {
-color: #00eaff;
-
-margin-bottom: 12px;
-
-}
-
-#nombreCancion {
-font-size: 14px;
-
-color: #b8c2d4;
-
-margin-bottom: 15px;
-
-word-break: break-word;
-
-}
-
-#archivoMusica {
-width: 100%;
-
-margin-bottom: 10px;
-
-font-size: 14px;
-
-}
-
-.controles-musica {
-display: flex;
-
-justify-content: center;
-
-flex-wrap: wrap;
-
-gap: 8px;
-
-}
-
-.controles-musica button {
-margin-top: 5px;
-
-padding: 10px 14px;
-
-font-size: 14px;
-
-}
-
-#volumen {
-width: 80%;
-
-margin-top: 12px;
-
-cursor: pointer;
-
-}
-
-/* =========================
-FUNCIONES
-========================= */
-
-.funciones {
-position: fixed;
-
-right: 30px;
-top: 50%;
-
-transform: translateY(-50%);
-
-width: 300px;
-
-padding: 25px;
-
-background: rgba(21, 29, 48, 0.95);
-
-border: 2px solid #00eaff;
-
-border-radius: 20px;
-
-box-shadow:
-    0 0 25px rgba(0, 234, 255, 0.25);
-
-backdrop-filter: blur(8px);
-
-}
-
-.funciones h2 {
-color: #00eaff;
-
-font-size: 21px;
-
-margin-bottom: 18px;
-
-text-align: center;
-
-}
-
-.funciones ul {
-list-style: none;
-}
-
-.funciones li {
-padding: 9px 0;
-
-border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-
-font-size: 15px;
-
-line-height: 1.3;
-
-}
-
-.funciones li:last-child {
-border-bottom: none;
-}
-
-/* =========================
-ROBOT DORMIDO
-========================= */
-
-.robot.dormido {
-opacity: 0.45;
-
-filter: grayscale(0.8);
-
-transform: scale(0.95);
-
-}
-
-.robot.dormido .ojo,
-.robot.dormido .boca {
-box-shadow: none;
-
-background: #667085;
-
-}
-
-/* =========================
-TABLETS
-========================= */
-
-@media (max-width: 1000px) {
-
-body {
-    flex-direction: column;
-
-    padding: 20px;
-}
-
-.contenedor {
-    width: 100%;
-
-    min-height: auto;
-
-    margin-bottom: 30px;
-}
-
-.funciones {
-    position: static;
-
-    transform: none;
-
-    width: min(500px, 100%);
-
-    margin: 0 auto;
-}
-
-}
-
-/* =========================
-CELULARES
-========================= */
-
-@media (max-width: 600px) {
-
-body {
-    padding: 15px;
-}
-
-.robot {
-    width: 180px;
-    height: 150px;
-}
-
-.ojo {
-    width: 34px;
-    height: 34px;
-
-    top: 38px;
-}
-
-.ojo-izquierdo {
-    left: 36px;
-}
-
-.ojo-derecho {
-    right: 36px;
-}
-
-.boca {
-    width: 60px;
-
-    bottom: 28px;
-}
-
-h1 {
-    font-size: 28px;
-}
-
-#mensaje {
-    font-size: 17px;
-}
-
-.zona-escribir {
-    flex-direction: column;
-}
-
-#textoRepetir {
-    width: 100%;
-}
-
-.matematicas {
-    padding: 18px;
-}
-
-#ecuacion {
-    font-size: 16px;
-}
-
-.reproductor {
-    padding: 18px;
-}
-
-.controles-musica {
-    flex-direction: column;
-}
-
-.controles-musica button {
-    width: 100%;
-}
-
-.funciones {
-    padding: 20px;
-}
-
-.funciones h2 {
-    font-size: 19px;
-}
-
-.funciones li {
-    font-size: 14px;
-}
-
-}
-
-/* =========================
-   INVESTIGACION
+   INVESTIGACIÓN
 ========================= */
 
 .investigacion {
     width: 100%;
+
     margin-top: 25px;
+
     padding: 22px;
+
     background: #151d30;
+
     border: 2px solid #263957;
+
     border-radius: 18px;
+
     box-shadow:
         0 0 15px rgba(0, 234, 255, 0.15);
 }
 
 .investigacion h2 {
     color: #00eaff;
+
     margin-bottom: 10px;
 }
 
 .investigacion p {
     color: #b8c2d4;
+
     font-size: 14px;
+
     margin-bottom: 15px;
 }
 
 #preguntaInvestigacion {
     width: 100%;
+
     padding: 13px;
+
     border: 2px solid #263957;
+
     border-radius: 12px;
+
     background: #0f1728;
+
     color: white;
+
     outline: none;
+
     font-size: 16px;
+
     text-align: center;
 }
 
@@ -618,35 +258,543 @@ h1 {
 
 #resultadoInvestigacion {
     margin-top: 18px;
+
     padding: 15px;
+
     min-height: 50px;
+
     background: #0f1728;
+
     border-radius: 12px;
+
     color: #dbe4f5;
+
     font-size: 15px;
+
     line-height: 1.5;
+
     text-align: left;
+
     word-break: break-word;
 }
 
 #resultadoInvestigacion strong {
     display: block;
+
     color: #00eaff;
+
     font-size: 18px;
+
     margin-bottom: 10px;
 }
 
 #resultadoInvestigacion p {
     color: #dbe4f5;
+
     margin: 0;
+
     font-size: 15px;
 }
 
 .boton-secundario {
     background: #263957;
+
     margin-top: 12px;
 }
 
 .boton-secundario:hover {
     background: #3b5275;
+}
+
+
+/* =========================
+   ENTRETENIMIENTO
+========================= */
+
+.entretenimiento {
+    width: 100%;
+
+    margin-top: 25px;
+
+    padding: 22px;
+
+    background: #151d30;
+
+    border: 2px solid #263957;
+
+    border-radius: 18px;
+
+    box-shadow:
+        0 0 15px rgba(0, 234, 255, 0.15);
+}
+
+.entretenimiento h2 {
+    color: #00eaff;
+
+    margin-bottom: 10px;
+}
+
+.entretenimiento > p {
+    color: #b8c2d4;
+
+    font-size: 14px;
+
+    margin-bottom: 15px;
+}
+
+.puntuacion {
+    padding: 12px;
+
+    margin-bottom: 15px;
+
+    background: #0f1728;
+
+    border-radius: 12px;
+
+    color: #ffd700;
+
+    font-size: 20px;
+
+    font-weight: bold;
+}
+
+#puntos {
+    color: white;
+}
+
+.botones-juegos {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    justify-content: center;
+
+    gap: 8px;
+}
+
+.botones-juegos button {
+    margin-top: 5px;
+
+    padding: 10px 13px;
+
+    font-size: 14px;
+}
+
+#resultadoJuego {
+    margin-top: 18px;
+
+    padding: 16px;
+
+    min-height: 70px;
+
+    background: #0f1728;
+
+    border-radius: 12px;
+
+    color: #dbe4f5;
+
+    font-size: 17px;
+
+    line-height: 1.5;
+}
+
+.opciones-ppt,
+.respuesta-trivia {
+    display: none;
+
+    margin-top: 12px;
+}
+
+.opciones-ppt button,
+.respuesta-trivia button {
+    margin: 5px;
+
+    padding: 10px 14px;
+}
+
+.respuesta-trivia input {
+    width: 65%;
+
+    padding: 11px;
+
+    border: 2px solid #263957;
+
+    border-radius: 10px;
+
+    background: #0f1728;
+
+    color: white;
+
+    outline: none;
+
+    font-size: 15px;
+}
+
+.respuesta-trivia input:focus {
+    border-color: #00eaff;
+}
+
+
+/* =========================
+   MATEMÁTICAS
+========================= */
+
+.matematicas {
+    width: 100%;
+
+    margin-top: 25px;
+
+    padding: 22px;
+
+    background: #151d30;
+
+    border: 2px solid #263957;
+
+    border-radius: 18px;
+
+    box-shadow:
+        0 0 15px rgba(0, 234, 255, 0.15);
+}
+
+.matematicas h2 {
+    color: #00eaff;
+
+    margin-bottom: 10px;
+}
+
+.matematicas p {
+    color: #b8c2d4;
+
+    font-size: 14px;
+
+    margin-bottom: 15px;
+}
+
+#ecuacion {
+    width: 100%;
+
+    padding: 13px;
+
+    border: 2px solid #263957;
+
+    border-radius: 12px;
+
+    background: #0f1728;
+
+    color: white;
+
+    outline: none;
+
+    font-size: 16px;
+
+    text-align: center;
+}
+
+#ecuacion:focus {
+    border-color: #00eaff;
+
+    box-shadow:
+        0 0 10px rgba(0, 234, 255, 0.4);
+}
+
+#ecuacion::placeholder {
+    color: #8893a8;
+}
+
+#resultadoMatematico {
+    margin-top: 18px;
+
+    min-height: 25px;
+
+    color: #00eaff;
+
+    font-size: 19px;
+
+    font-weight: bold;
+
+    word-break: break-word;
+}
+
+
+/* =========================
+   REPRODUCTOR
+========================= */
+
+.reproductor {
+    width: 100%;
+
+    margin-top: 25px;
+
+    padding: 22px;
+
+    background: #151d30;
+
+    border: 2px solid #263957;
+
+    border-radius: 18px;
+
+    box-shadow:
+        0 0 15px rgba(0, 234, 255, 0.15);
+}
+
+.reproductor h2 {
+    color: #00eaff;
+
+    margin-bottom: 12px;
+}
+
+#nombreCancion {
+    font-size: 14px;
+
+    color: #b8c2d4;
+
+    margin-bottom: 15px;
+
+    word-break: break-word;
+}
+
+#archivoMusica {
+    width: 100%;
+
+    margin-bottom: 10px;
+
+    font-size: 14px;
+}
+
+.controles-musica {
+    display: flex;
+
+    justify-content: center;
+
+    flex-wrap: wrap;
+
+    gap: 8px;
+}
+
+.controles-musica button {
+    margin-top: 5px;
+
+    padding: 10px 14px;
+
+    font-size: 14px;
+}
+
+#volumen {
+    width: 80%;
+
+    margin-top: 12px;
+
+    cursor: pointer;
+}
+
+
+/* =========================
+   FUNCIONES
+========================= */
+
+.funciones {
+    position: fixed;
+
+    right: 30px;
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    width: 300px;
+
+    padding: 25px;
+
+    background: rgba(21, 29, 48, 0.95);
+
+    border: 2px solid #00eaff;
+
+    border-radius: 20px;
+
+    box-shadow:
+        0 0 25px rgba(0, 234, 255, 0.25);
+
+    backdrop-filter: blur(8px);
+}
+
+.funciones h2 {
+    color: #00eaff;
+
+    font-size: 21px;
+
+    margin-bottom: 18px;
+
+    text-align: center;
+}
+
+.funciones ul {
+    list-style: none;
+}
+
+.funciones li {
+    padding: 9px 0;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+    font-size: 15px;
+
+    line-height: 1.3;
+}
+
+.funciones li:last-child {
+    border-bottom: none;
+}
+
+
+/* =========================
+   ROBOT DORMIDO
+========================= */
+
+.robot.dormido {
+    opacity: 0.45;
+
+    filter: grayscale(0.8);
+
+    transform: scale(0.95);
+}
+
+.robot.dormido .ojo,
+.robot.dormido .boca {
+    box-shadow: none;
+
+    background: #667085;
+}
+
+
+/* =========================
+   TABLETS
+========================= */
+
+@media (max-width: 1000px) {
+
+    body {
+        flex-direction: column;
+
+        padding: 20px;
+    }
+
+    .contenedor {
+        width: 100%;
+
+        min-height: auto;
+
+        margin-bottom: 30px;
+    }
+
+    .funciones {
+        position: static;
+
+        transform: none;
+
+        width: min(500px, 100%);
+
+        margin: 0 auto;
+    }
+}
+
+
+/* =========================
+   CELULARES
+========================= */
+
+@media (max-width: 600px) {
+
+    body {
+        padding: 15px;
+    }
+
+    .robot {
+        width: 180px;
+        height: 150px;
+    }
+
+    .ojo {
+        width: 34px;
+        height: 34px;
+
+        top: 38px;
+    }
+
+    .ojo-izquierdo {
+        left: 36px;
+    }
+
+    .ojo-derecho {
+        right: 36px;
+    }
+
+    .boca {
+        width: 60px;
+
+        bottom: 28px;
+    }
+
+    h1 {
+        font-size: 28px;
+    }
+
+    #mensaje {
+        font-size: 17px;
+    }
+
+    .zona-escribir {
+        flex-direction: column;
+    }
+
+    #textoRepetir {
+        width: 100%;
+    }
+
+    .matematicas,
+    .investigacion,
+    .entretenimiento,
+    .reproductor {
+        padding: 18px;
+    }
+
+    .botones-juegos {
+        flex-direction: column;
+    }
+
+    .botones-juegos button {
+        width: 100%;
+    }
+
+    .opciones-ppt button {
+        width: 100%;
+        margin: 5px 0;
+    }
+
+    .respuesta-trivia input {
+        width: 100%;
+    }
+
+    .respuesta-trivia button {
+        width: 100%;
+        margin: 8px 0;
+    }
+
+    .controles-musica {
+        flex-direction: column;
+    }
+
+    .controles-musica button {
+        width: 100%;
+    }
+
+    .funciones {
+        padding: 20px;
+    }
+
+    .funciones h2 {
+        font-size: 19px;
+    }
+
+    .funciones li {
+        font-size: 14px;
+    }
 }
