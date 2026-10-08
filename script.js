@@ -7,42 +7,63 @@ const estadoTachi = document.getElementById("estadoTachi");
 const rostroTachi = document.getElementById("rostroTachi");
 
 const investigarBtn = document.getElementById("investigar");
-const preguntaInvestigacion = document.getElementById("preguntaInvestigacion");
-const resultadoInvestigacion = document.getElementById("resultadoInvestigacion");
-const abrirBusqueda = document.getElementById("abrirBusqueda");
+const preguntaInvestigacion =
+    document.getElementById("preguntaInvestigacion");
+const resultadoInvestigacion =
+    document.getElementById("resultadoInvestigacion");
+const abrirBusqueda =
+    document.getElementById("abrirBusqueda");
 
-const sorprendemeBtn = document.getElementById("sorprendeme");
-const triviaBtn = document.getElementById("trivia");
-const adivinanzaBtn = document.getElementById("adivinanza");
-const chisteBtn = document.getElementById("chiste");
-const piedraPapelTijeraBtn = document.getElementById("piedraPapelTijera");
+const sorprendemeBtn =
+    document.getElementById("sorprendeme");
+const triviaBtn =
+    document.getElementById("trivia");
+const adivinanzaBtn =
+    document.getElementById("adivinanza");
+const chisteBtn =
+    document.getElementById("chiste");
+const piedraPapelTijeraBtn =
+    document.getElementById("piedraPapelTijera");
 
-const puntosElemento = document.getElementById("puntos");
-const resultadoJuego = document.getElementById("resultadoJuego");
-const opcionesPPT = document.getElementById("opcionesPPT");
-const zonaRespuesta = document.getElementById("zonaRespuesta");
-const respuestaUsuario = document.getElementById("respuestaUsuario");
-const comprobarTrivia = document.getElementById("comprobarTrivia");
+const puntosElemento =
+    document.getElementById("puntos");
+const resultadoJuego =
+    document.getElementById("resultadoJuego");
 
-const ecuacionInput = document.getElementById("ecuacion");
-const resolverBtn = document.getElementById("resolver");
-const resultadoMatematico = document.getElementById("resultadoMatematico");
+const opcionesPPT =
+    document.getElementById("opcionesPPT");
+const zonaRespuesta =
+    document.getElementById("zonaRespuesta");
+const respuestaUsuario =
+    document.getElementById("respuestaUsuario");
+const comprobarTrivia =
+    document.getElementById("comprobarTrivia");
 
-const archivoMusica = document.getElementById("archivoMusica");
-const reproductor = document.getElementById("reproductor");
-const playMusica = document.getElementById("playMusica");
-const pausaMusica = document.getElementById("pausaMusica");
-const stopMusica = document.getElementById("stopMusica");
-const volumenMusica = document.getElementById("volumenMusica");
+const resolverBtn =
+    document.getElementById("resolver");
+const ecuacion =
+    document.getElementById("ecuacion");
+const resultadoMatematico =
+    document.getElementById("resultadoMatematico");
+
+const archivoMusica =
+    document.getElementById("archivoMusica");
+const reproductor =
+    document.getElementById("reproductor");
+const playMusica =
+    document.getElementById("playMusica");
+const pausaMusica =
+    document.getElementById("pausaMusica");
+const stopMusica =
+    document.getElementById("stopMusica");
+const volumenMusica =
+    document.getElementById("volumenMusica");
+
 
 let puntos = 0;
 let temporizadorDormir;
 let idVoz = 0;
-let audioTachi = null;
-let urlAudioActual = null;
 
-const URL_TACHI_VOZ =
-    "https://tachi-voz.alex2010hernandez28.workers.dev";
 
 const rostrosTachi = {
     normal: "tachi-normal.png",
@@ -54,17 +75,18 @@ const rostrosTachi = {
     dormido: "tachi-dormido.png"
 };
 
+
 function cambiarEstado(estado) {
-    if (!rostroTachi || !estadoTachi) return;
 
     clearTimeout(temporizadorDormir);
 
-    rostroTachi.classList.add("cambiando");
-
-    setTimeout(() => {
+    if (rostroTachi) {
         rostroTachi.src =
-            rostrosTachi[estado] || rostrosTachi.normal;
+            rostrosTachi[estado] ||
+            rostrosTachi.normal;
+    }
 
+    if (estadoTachi) {
         const nombres = {
             normal: "Normal",
             escuchando: "Escuchando",
@@ -77,23 +99,30 @@ function cambiarEstado(estado) {
 
         estadoTachi.textContent =
             nombres[estado] || "Normal";
+    }
 
-        document.body.classList.remove(
-            "tachi-escuchando",
-            "tachi-hablando",
-            "tachi-investigando",
-            "tachi-dormido"
+    document.body.classList.remove(
+        "tachi-escuchando",
+        "tachi-hablando",
+        "tachi-investigando",
+        "tachi-dormido"
+    );
+
+    if (
+        estado === "escuchando" ||
+        estado === "hablando" ||
+        estado === "investigando" ||
+        estado === "dormido"
+    ) {
+        document.body.classList.add(
+            `tachi-${estado}`
         );
-
-        if (estado !== "normal") {
-            document.body.classList.add(`tachi-${estado}`);
-        }
-
-        rostroTachi.classList.remove("cambiando");
-    }, 120);
+    }
 }
 
+
 function programarDormir() {
+
     clearTimeout(temporizadorDormir);
 
     temporizadorDormir = setTimeout(() => {
@@ -101,154 +130,95 @@ function programarDormir() {
     }, 5000);
 }
 
+
 function detenerVoz() {
+
     idVoz++;
 
-    if (audioTachi) {
-        audioTachi.pause();
-        audioTachi.currentTime = 0;
-        audioTachi = null;
+    if ("speechSynthesis" in window) {
+        speechSynthesis.cancel();
     }
 
-    if (urlAudioActual) {
-        URL.revokeObjectURL(urlAudioActual);
-        urlAudioActual = null;
-    }
+    cambiarEstado("normal");
 }
 
-async function hablar(texto) {
+
+function hablar(texto) {
+
     if (!texto || !texto.trim()) return;
 
     const idActual = ++idVoz;
 
-    if (audioTachi) {
-        audioTachi.pause();
-        audioTachi.currentTime = 0;
-        audioTachi = null;
+    if (!("speechSynthesis" in window)) {
+
+        console.error(
+            "Este navegador no admite síntesis de voz."
+        );
+
+        return;
     }
 
-    if (urlAudioActual) {
-        URL.revokeObjectURL(urlAudioActual);
-        urlAudioActual = null;
-    }
+    speechSynthesis.cancel();
 
     cambiarEstado("hablando");
 
-    try {
-        const respuesta = await fetch(URL_TACHI_VOZ, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                text: texto
-            })
-        });
+    const voz =
+        new SpeechSynthesisUtterance(texto);
+
+    voz.lang = "es-SV";
+    voz.rate = 0.96;
+    voz.pitch = 1;
+    voz.volume = 1;
+
+    voz.onend = () => {
 
         if (idActual !== idVoz) return;
 
-        if (!respuesta.ok) {
-            let mensajeError =
-                "No pude generar la voz de Tachi.";
-
-            try {
-                const datosError =
-                    await respuesta.json();
-
-                if (datosError.error) {
-                    mensajeError =
-                        datosError.error;
-                }
-            } catch (error) {
-                // No hacer nada
-            }
-
-            throw new Error(mensajeError);
-        }
-
-        const blob = await respuesta.blob();
-
-        if (idActual !== idVoz) return;
-
-        urlAudioActual =
-            URL.createObjectURL(blob);
-
-        audioTachi = new Audio(
-            urlAudioActual
-        );
-
-        audioTachi.volume = 1;
-
-        audioTachi.onended = () => {
-            if (idActual !== idVoz) return;
-
-            if (urlAudioActual) {
-                URL.revokeObjectURL(
-                    urlAudioActual
-                );
-
-                urlAudioActual = null;
-            }
-
-            audioTachi = null;
-
-            cambiarEstado("normal");
-            programarDormir();
-        };
-
-        audioTachi.onerror = () => {
-            if (idActual !== idVoz) return;
-
-            audioTachi = null;
-
-            if (urlAudioActual) {
-                URL.revokeObjectURL(
-                    urlAudioActual
-                );
-
-                urlAudioActual = null;
-            }
-
-            cambiarEstado("normal");
-            programarDormir();
-        };
-
-        await audioTachi.play();
-
-    } catch (error) {
-        if (idActual !== idVoz) return;
-
-        console.error(
-            "Error de voz Tachi:",
-            error
-        );
-
-        cambiarEstado("sorprendido");
-
-        respuestaVoz.textContent =
-            "No pude reproducir la nueva voz. Revisa que el Worker esté funcionando.";
-
+        cambiarEstado("normal");
         programarDormir();
-    }
+    };
+
+    voz.onerror = () => {
+
+        if (idActual !== idVoz) return;
+
+        cambiarEstado("normal");
+        programarDormir();
+    };
+
+    speechSynthesis.speak(voz);
 }
 
+
 function actualizarPuntos(cantidad) {
+
     puntos += cantidad;
 
     if (puntos < 0) {
         puntos = 0;
     }
 
-    puntosElemento.textContent = puntos;
+    if (puntosElemento) {
+        puntosElemento.textContent = puntos;
+    }
 }
 
+
 function responder(texto) {
+
+    if (!respuestaVoz) return;
+
     respuestaVoz.textContent = texto;
+
     hablar(texto);
 }
 
+
 function obtenerHora() {
-    return new Date().toLocaleTimeString(
+
+    const ahora = new Date();
+
+    return ahora.toLocaleTimeString(
         "es-SV",
         {
             hour: "numeric",
@@ -257,404 +227,409 @@ function obtenerHora() {
     );
 }
 
+
 function obtenerFecha() {
-    return new Date().toLocaleDateString(
+
+    const ahora = new Date();
+
+    return ahora.toLocaleDateString(
         "es-SV",
         {
-            weekday: "long",
-            year: "numeric",
+            day: "numeric",
             month: "long",
-            day: "numeric"
+            year: "numeric"
         }
     );
 }
 
+
 function calcularExpresion(expresion) {
+
     let texto = expresion
         .toLowerCase()
-        .replace(/,/g, ".")
-        .replace(/\s+/g, "");
+        .trim();
 
     texto = texto
-        .replace(/por/g, "*")
-        .replace(/×/g, "*")
-        .replace(/÷/g, "/")
-        .replace(/dividido/g, "/")
-        .replace(/más/g, "+")
-        .replace(/menos/g, "-");
+        .replace(/raiz/g, "Math.sqrt")
+        .replace(/√/g, "Math.sqrt")
+        .replace(/\^/g, "**")
+        .replace(/,/g, ".")
+        .replace(/%/g, "/100");
 
-    if (texto.includes("%")) {
-        const numero =
-            parseFloat(
-                texto.replace("%", "")
-            );
+    texto = texto.replace(
+        /(\d+)\s*%/g,
+        "($1/100)"
+    );
 
-        if (!isNaN(numero)) {
-            return numero / 100;
-        }
-    }
-
-    if (texto.startsWith("raiz")) {
-        const numero =
-            parseFloat(
-                texto.replace("raiz", "")
-            );
+    try {
 
         if (
-            !isNaN(numero) &&
-            numero >= 0
+            !/^[0-9+\-*/().\sMathsqrt]+$/.test(
+                texto
+            )
         ) {
-            return Math.sqrt(numero);
-        }
-    }
-
-    if (texto.includes("^")) {
-        const partes =
-            texto.split("^");
-
-        if (partes.length === 2) {
-            const base =
-                parseFloat(partes[0]);
-
-            const exponente =
-                parseFloat(partes[1]);
-
-            if (
-                !isNaN(base) &&
-                !isNaN(exponente)
-            ) {
-                return Math.pow(
-                    base,
-                    exponente
-                );
-            }
-        }
-    }
-
-    if (
-        /^[0-9+\-*/().]+$/.test(
-            texto
-        )
-    ) {
-        try {
-            const resultado =
-                Function(
-                    `"use strict"; return (${texto})`
-                )();
-
-            if (
-                typeof resultado ===
-                    "number" &&
-                isFinite(resultado)
-            ) {
-                return resultado;
-            }
-        } catch (error) {
             return null;
         }
-    }
 
-    return null;
+        const resultado =
+            Function(
+                `"use strict"; return (${texto})`
+            )();
+
+        if (
+            typeof resultado !== "number" ||
+            !isFinite(resultado)
+        ) {
+            return null;
+        }
+
+        return resultado;
+
+    } catch (error) {
+
+        return null;
+    }
 }
 
-function resolverEcuacion(ecuacion) {
-    let texto = ecuacion
+
+function resolverEcuacion(ecuacionTexto) {
+
+    let texto = ecuacionTexto
         .toLowerCase()
         .replace(/\s+/g, "")
-        .replace(/,/g, ".");
+        .replace(/−/g, "-");
 
     if (!texto.includes("=")) {
         return null;
     }
 
-    const partes =
-        texto.split("=");
+    const partes = texto.split("=");
 
     if (partes.length !== 2) {
         return null;
     }
 
-    const izquierda = partes[0];
-    const derecha = partes[1];
+    let izquierda = partes[0];
+    let derecha = partes[1];
 
-    const patronIzquierda =
-        izquierda.match(
-            /^([+-]?\d*\.?\d*)x([+-]\d*\.?\d*)?$/
-        );
+    try {
 
-    if (!patronIzquierda) {
+        function obtenerCoeficientes(expresion) {
+
+            let xMatch =
+                expresion.match(
+                    /^([+-]?\d*\.?\d*)x([+-]\d*\.?\d*)?$/
+                );
+
+            if (!xMatch) return null;
+
+            let a = xMatch[1];
+
+            if (a === "" || a === "+") {
+                a = 1;
+            } else if (a === "-") {
+                a = -1;
+            } else {
+                a = Number(a);
+            }
+
+            let b = xMatch[2];
+
+            if (!b) {
+                b = 0;
+            } else {
+                b = Number(b);
+            }
+
+            return {
+                a,
+                b
+            };
+        }
+
+        const izquierdaCoef =
+            obtenerCoeficientes(izquierda);
+
+        if (izquierdaCoef) {
+
+            const c = Number(derecha);
+
+            if (!isFinite(c)) return null;
+
+            const {
+                a,
+                b
+            } = izquierdaCoef;
+
+            if (a === 0) return null;
+
+            return (c - b) / a;
+        }
+
+        const derechaCoef =
+            obtenerCoeficientes(derecha);
+
+        if (derechaCoef) {
+
+            const c = Number(izquierda);
+
+            if (!isFinite(c)) return null;
+
+            const {
+                a,
+                b
+            } = derechaCoef;
+
+            if (a === 0) return null;
+
+            return (c - b) / a;
+        }
+
+    } catch (error) {
+
         return null;
     }
 
-    let coeficiente =
-        patronIzquierda[1];
+    return null;
+}
 
-    if (
-        coeficiente === "" ||
-        coeficiente === "+"
-    ) {
-        coeficiente = 1;
-    } else if (
-        coeficiente === "-"
-    ) {
-        coeficiente = -1;
-    } else {
-        coeficiente =
-            parseFloat(coeficiente);
-    }
 
-    let termino =
-        patronIzquierda[2];
+if (resolverBtn) {
 
-    if (!termino) {
-        termino = 0;
-    } else {
-        termino =
-            parseFloat(termino);
-    }
+    resolverBtn.addEventListener(
+        "click",
+        () => {
 
-    const resultadoDerecha =
-        parseFloat(derecha);
+            const texto =
+                ecuacion.value.trim();
 
-    if (
-        isNaN(coeficiente) ||
-        isNaN(termino) ||
-        isNaN(resultadoDerecha) ||
-        coeficiente === 0
-    ) {
-        return null;
-    }
+            if (!texto) {
 
-    return (
-        (resultadoDerecha -
-            termino) /
-        coeficiente
+                resultadoMatematico.textContent =
+                    "Escribe una operación o ecuación.";
+
+                return;
+            }
+
+            const resultadoEcuacion =
+                resolverEcuacion(texto);
+
+            if (
+                resultadoEcuacion !== null &&
+                texto.includes("=")
+            ) {
+
+                const resultado =
+                    Number.isInteger(
+                        resultadoEcuacion
+                    )
+                        ? resultadoEcuacion
+                        : resultadoEcuacion.toFixed(4);
+
+                resultadoMatematico.textContent =
+                    `Resultado: x = ${resultado}`;
+
+                responder(
+                    `La respuesta es x igual a ${resultado}.`
+                );
+
+                return;
+            }
+
+            const resultado =
+                calcularExpresion(texto);
+
+            if (resultado === null) {
+
+                resultadoMatematico.textContent =
+                    "No pude resolver esa operación.";
+
+                responder(
+                    "No pude resolver esa operación."
+                );
+
+                return;
+            }
+
+            const resultadoFinal =
+                Number.isInteger(resultado)
+                    ? resultado
+                    : Number(
+                        resultado.toFixed(4)
+                    );
+
+            resultadoMatematico.textContent =
+                `Resultado: ${resultadoFinal}`;
+
+            responder(
+                `El resultado es ${resultadoFinal}.`
+            );
+        }
     );
 }
 
-resolverBtn.addEventListener(
-    "click",
-    () => {
-        const ecuacion =
-            ecuacionInput.value.trim();
 
-        if (!ecuacion) {
-            resultadoMatematico.textContent =
-                "Escribe una operación o ecuación.";
+if (ecuacion) {
 
-            hablar(
-                "Escribe una operación o ecuación."
-            );
+    ecuacion.addEventListener(
+        "keydown",
+        event => {
 
-            return;
+            if (event.key === "Enter") {
+                resolverBtn.click();
+            }
         }
+    );
+}
 
-        const ecuacionResultado =
-            resolverEcuacion(
-                ecuacion
-            );
 
-        if (
-            ecuacionResultado !== null
-        ) {
-            const resultado =
-                Number.isInteger(
-                    ecuacionResultado
-                )
-                    ? ecuacionResultado
-                    : ecuacionResultado.toFixed(
-                          2
-                      );
+if (repetirBtn) {
 
-            resultadoMatematico.textContent =
-                `Resultado: x = ${resultado}`;
+    repetirBtn.addEventListener(
+        "click",
+        () => {
 
-            hablar(
-                `La solución de la ecuación es x igual a ${resultado}.`
-            );
+            const texto =
+                textoRepetir.value.trim();
 
-            cambiarEstado("feliz");
-            programarDormir();
+            if (!texto) {
 
-            return;
+                responder(
+                    "Escribe algo para que pueda repetirlo."
+                );
+
+                return;
+            }
+
+            responder(texto);
         }
+    );
+}
 
-        const resultado =
-            calcularExpresion(
-                ecuacion
-            );
 
-        if (resultado !== null) {
-            const numeroFinal =
-                Number.isInteger(
-                    resultado
-                )
-                    ? resultado
-                    : Number(
-                          resultado.toFixed(
-                              4
-                          )
-                      );
+if (textoRepetir) {
 
-            resultadoMatematico.textContent =
-                `Resultado: ${numeroFinal}`;
+    textoRepetir.addEventListener(
+        "keydown",
+        event => {
 
-            hablar(
-                `El resultado es ${numeroFinal}.`
-            );
-
-            cambiarEstado("feliz");
-            programarDormir();
-
-            return;
+            if (event.key === "Enter") {
+                repetirBtn.click();
+            }
         }
+    );
+}
 
-        resultadoMatematico.textContent =
-            "No pude entender esa operación.";
 
-        hablar(
-            "No pude entender esa operación. Prueba, por ejemplo, 2 más 2 o 2x más 5 igual a 15."
-        );
-    }
-);
+let reconocimiento;
 
-repetirBtn.addEventListener(
-    "click",
-    () => {
-        const texto =
-            textoRepetir.value.trim();
+if (
+    "SpeechRecognition" in window ||
+    "webkitSpeechRecognition" in window
+) {
 
-        if (!texto) {
-            respuestaVoz.textContent =
-                "Escribe algo para que pueda repetirlo.";
+    const SpeechRecognition =
+        window.SpeechRecognition ||
+        window.webkitSpeechRecognition;
 
-            hablar(
-                "Escribe algo para que pueda repetirlo."
-            );
+    reconocimiento =
+        new SpeechRecognition();
 
-            return;
-        }
+    reconocimiento.lang = "es-SV";
+    reconocimiento.continuous = false;
+    reconocimiento.interimResults = false;
 
-        respuestaVoz.textContent =
-            texto;
+    reconocimiento.onstart = () => {
 
-        hablar(texto);
-    }
-);
-
-textoRepetir.addEventListener(
-    "keydown",
-    event => {
-        if (event.key === "Enter") {
-            repetirBtn.click();
-        }
-    }
-);
-
-hablarBtn.addEventListener(
-    "click",
-    () => {
-        if (
-            !("SpeechRecognition" in
-                window) &&
-            !(
-                "webkitSpeechRecognition" in
-                window
-            )
-        ) {
-            responder(
-                "Tu navegador no permite reconocimiento de voz. Puedes usar la función de repetir texto."
-            );
-
-            return;
-        }
-
-        const Recognition =
-            window.SpeechRecognition ||
-            window.webkitSpeechRecognition;
-
-        const reconocimiento =
-            new Recognition();
-
-        reconocimiento.lang =
-            "es-SV";
-
-        reconocimiento.continuous =
-            false;
-
-        reconocimiento.interimResults =
-            false;
-
-        cambiarEstado(
-            "escuchando"
-        );
+        cambiarEstado("escuchando");
 
         respuestaVoz.textContent =
             "Te estoy escuchando...";
+    };
 
-        reconocimiento.start();
+    reconocimiento.onresult = event => {
 
-        reconocimiento.onresult =
-            event => {
-                const texto =
-                    event.results[0][0]
-                        .transcript
-                        .toLowerCase()
-                        .trim();
+        const texto =
+            event.results[0][0].transcript;
 
-                procesarComando(texto);
-            };
+        respuestaVoz.textContent =
+            `Escuché: "${texto}"`;
 
-        reconocimiento.onerror =
-            () => {
-                cambiarEstado(
-                    "normal"
+        procesarComando(texto);
+    };
+
+    reconocimiento.onerror = event => {
+
+        console.error(
+            "Error de reconocimiento:",
+            event.error
+        );
+
+        cambiarEstado("sorprendido");
+
+        respuestaVoz.textContent =
+            "No pude entenderte.";
+
+        programarDormir();
+    };
+
+    reconocimiento.onend = () => {
+
+        if (estadoTachi.textContent === "Escuchando") {
+            cambiarEstado("normal");
+        }
+    };
+}
+
+
+if (hablarBtn) {
+
+    hablarBtn.addEventListener(
+        "click",
+        () => {
+
+            if (!reconocimiento) {
+
+                responder(
+                    "Tu navegador no admite reconocimiento de voz."
                 );
 
-                respuestaVoz.textContent =
-                    "No pude escucharte. Intenta hablar nuevamente.";
+                return;
+            }
 
-                programarDormir();
-            };
+            try {
 
-        reconocimiento.onend =
-            () => {
-                if (
-                    estadoTachi.textContent ===
-                    "Escuchando"
-                ) {
-                    cambiarEstado(
-                        "normal"
-                    );
+                detenerVoz();
 
-                    programarDormir();
-                }
-            };
-    }
-);
+                reconocimiento.start();
 
-async function investigarTema(
-    pregunta
-) {
-    if (!pregunta) {
-        resultadoInvestigacion.textContent =
-            "Escribe algo que quieras investigar.";
+            } catch (error) {
 
-        hablar(
-            "Escribe algo que quieras investigar."
+                console.error(error);
+            }
+        }
+    );
+}
+
+
+async function investigarTema(tema) {
+
+    if (!tema || !tema.trim()) {
+
+        responder(
+            "Escribe algo para investigar."
         );
 
         return;
     }
 
-    cambiarEstado(
-        "investigando"
-    );
+    cambiarEstado("investigando");
 
     resultadoInvestigacion.textContent =
-        "Tachi está investigando... 🔎";
+        "Investigando...";
 
     try {
+
         const url =
             "https://es.wikipedia.org/w/api.php" +
             "?action=query" +
@@ -665,9 +640,7 @@ async function investigarTema(
             "&explaintext=1" +
             "&redirects=1" +
             "&titles=" +
-            encodeURIComponent(
-                pregunta
-            );
+            encodeURIComponent(tema);
 
         const respuesta =
             await fetch(url);
@@ -676,369 +649,362 @@ async function investigarTema(
             await respuesta.json();
 
         const paginas =
-            datos.query.pages;
+            datos.query?.pages;
+
+        if (!paginas) {
+            throw new Error(
+                "Sin resultados"
+            );
+        }
 
         const pagina =
-            Object.values(
-                paginas
-            )[0];
+            Object.values(paginas)[0];
 
         if (
             !pagina ||
-            pagina.missing ||
-            !pagina.extract
+            pagina.missing !== undefined
         ) {
+
             resultadoInvestigacion.textContent =
-                "No encontré información clara. Puedes usar el botón de resultados.";
+                "No encontré información sobre ese tema.";
 
-            cambiarEstado(
-                "sorprendido"
+            responder(
+                "No encontré información sobre ese tema."
             );
-
-            hablar(
-                "No encontré información clara sobre ese tema. Puedes ver más resultados en Internet."
-            );
-
-            programarDormir();
 
             return;
         }
 
-        let resumen =
-            pagina.extract.trim();
+        const resumen =
+            pagina.extract ||
+            "No encontré un resumen disponible.";
 
-        if (resumen.length > 850) {
-            resumen =
-                resumen.substring(
-                    0,
-                    850
-                ) + "...";
-        }
+        resultadoInvestigacion.textContent =
+            resumen;
 
-        resultadoInvestigacion.innerHTML =
-            `<strong>${pagina.title}</strong><br><br>${resumen}`;
-
-        cambiarEstado(
-            "feliz"
+        responder(
+            resumen.substring(0, 500)
         );
-
-        hablar(
-            `Encontré información sobre ${pagina.title}. ${resumen}`
-        );
-
-        programarDormir();
 
     } catch (error) {
+
+        console.error(
+            "Error investigando:",
+            error
+        );
+
         resultadoInvestigacion.textContent =
-            "No pude conectarme para investigar.";
+            "No pude realizar la investigación.";
 
-        cambiarEstado(
-            "sorprendido"
+        responder(
+            "No pude realizar la investigación."
         );
-
-        hablar(
-            "No pude conectarme para investigar en este momento."
-        );
-
-        programarDormir();
     }
 }
 
-investigarBtn.addEventListener(
-    "click",
-    () => {
-        const pregunta =
-            preguntaInvestigacion.value.trim();
 
-        investigarTema(
-            pregunta
-        );
-    }
-);
+if (investigarBtn) {
 
-preguntaInvestigacion.addEventListener(
-    "keydown",
-    event => {
-        if (event.key === "Enter") {
-            investigarBtn.click();
-        }
-    }
-);
+    investigarBtn.addEventListener(
+        "click",
+        () => {
 
-abrirBusqueda.addEventListener(
-    "click",
-    () => {
-        const pregunta =
-            preguntaInvestigacion.value.trim();
-
-        if (!pregunta) {
-            hablar(
-                "Escribe primero qué quieres investigar."
+            investigarTema(
+                preguntaInvestigacion.value
             );
-
-            return;
         }
+    );
+}
 
-        window.open(
-            `https://www.google.com/search?q=${encodeURIComponent(
-                pregunta
-            )}`,
-            "_blank"
-        );
-    }
-);
+
+if (preguntaInvestigacion) {
+
+    preguntaInvestigacion.addEventListener(
+        "keydown",
+        event => {
+
+            if (event.key === "Enter") {
+                investigarBtn.click();
+            }
+        }
+    );
+}
+
+
+if (abrirBusqueda) {
+
+    abrirBusqueda.addEventListener(
+        "click",
+        () => {
+
+            const pregunta =
+                preguntaInvestigacion.value.trim();
+
+            if (!pregunta) {
+
+                responder(
+                    "Escribe algo para buscar."
+                );
+
+                return;
+            }
+
+            const url =
+                "https://www.google.com/search?q=" +
+                encodeURIComponent(pregunta);
+
+            window.open(
+                url,
+                "_blank"
+            );
+        }
+    );
+}
+
 
 const chistes = [
-    "¿Qué hace una abeja en el gimnasio? ¡Zum-ba!",
-    "¿Por qué el libro de matemáticas estaba triste? Porque tenía demasiados problemas.",
-    "¿Qué le dijo un cero a un ocho? Bonito cinturón.",
-    "¿Cuál es el colmo de un robot? Tener el corazón de metal y ponerse nervioso."
+
+    "¿Qué hace una computadora cuando tiene frío? Se pone Windows.",
+
+    "¿Por qué el programador confundió Halloween con Navidad? Porque OCT 31 es igual a DEC 25.",
+
+    "¿Qué le dijo un bit a otro bit? Nos vemos en el próximo byte."
+
 ];
 
+
 const adivinanzas = [
+
     {
         pregunta:
-            "Tengo agujas y no sé coser. ¿Qué soy?",
-        respuesta:
-            "reloj"
+            "Tengo teclas pero no abro puertas. ¿Qué soy?",
+        respuesta: "teclado"
     },
+
+    {
+        pregunta:
+            "Tengo agujas pero no sé coser. ¿Qué soy?",
+        respuesta: "reloj"
+    },
+
     {
         pregunta:
             "Cuanto más quitas, más grande se vuelve. ¿Qué es?",
-        respuesta:
-            "agujero"
-    },
-    {
-        pregunta:
-            "Tengo dientes pero no puedo comer. ¿Qué soy?",
-        respuesta:
-            "peine"
+        respuesta: "agujero"
     }
+
 ];
 
+
 const trivias = [
+
     {
         pregunta:
             "¿Cuál es el planeta más grande del sistema solar?",
-        respuesta:
-            "jupiter"
+        respuesta: "jupiter"
     },
+
     {
         pregunta:
-            "¿Cuántos lados tiene un hexágono?",
-        respuesta:
-            "6"
+            "¿Cuántos continentes hay?",
+        respuesta: "7"
     },
+
     {
         pregunta:
-            "¿Cuál es el océano más grande del planeta?",
-        respuesta:
-            "pacifico"
-    },
-    {
-        pregunta:
-            "¿Qué animal es conocido como el rey de la selva?",
-        respuesta:
-            "leon"
+            "¿Cuál es la capital de El Salvador?",
+        respuesta: "san salvador"
     }
+
 ];
 
+
 let triviaActual = null;
+let adivinanzaActual = null;
 
-function elegirAleatorio(
-    lista
-) {
-    return lista[
-        Math.floor(
-            Math.random() *
-                lista.length
-        )
-    ];
-}
 
-chisteBtn.addEventListener(
-    "click",
-    () => {
-        const chiste =
-            elegirAleatorio(
-                chistes
-            );
+if (sorprendemeBtn) {
 
-        resultadoJuego.textContent =
-            chiste;
+    sorprendemeBtn.addEventListener(
+        "click",
+        () => {
 
-        cambiarEstado(
-            "feliz"
-        );
+            const opciones = [
 
-        hablar(chiste);
+                () =>
+                    responder(
+                        "La tecnología avanza cada día. ¡Sigue aprendiendo!"
+                    ),
 
-        programarDormir();
-    }
-);
+                () =>
+                    responder(
+                        "Dato curioso: los pulpos tienen tres corazones."
+                    ),
 
-adivinanzaBtn.addEventListener(
-    "click",
-    () => {
-        const adivinanza =
-            elegirAleatorio(
-                adivinanzas
-            );
+                () =>
+                    responder(
+                        "Nunca dejes de experimentar con tus ideas."
+                    ),
 
-        resultadoJuego.textContent =
-            adivinanza.pregunta;
+                () =>
+                    responder(
+                        "Quizá hoy sea un buen día para aprender algo nuevo."
+                    )
 
-        cambiarEstado(
-            "sorprendido"
-        );
+            ];
 
-        hablar(
-            adivinanza.pregunta
-        );
+            const opcion =
+                opciones[
+                    Math.floor(
+                        Math.random() *
+                        opciones.length
+                    )
+                ];
 
-        zonaRespuesta.classList.remove(
-            "oculto"
-        );
-
-        opcionesPPT.classList.add(
-            "oculto"
-        );
-
-        respuestaUsuario.value =
-            "";
-
-        respuestaUsuario.focus();
-    }
-);
-
-triviaBtn.addEventListener(
-    "click",
-    () => {
-        triviaActual =
-            elegirAleatorio(
-                trivias
-            );
-
-        resultadoJuego.textContent =
-            triviaActual.pregunta;
-
-        cambiarEstado(
-            "investigando"
-        );
-
-        hablar(
-            triviaActual.pregunta
-        );
-
-        zonaRespuesta.classList.remove(
-            "oculto"
-        );
-
-        opcionesPPT.classList.add(
-            "oculto"
-        );
-
-        respuestaUsuario.value =
-            "";
-
-        respuestaUsuario.focus();
-    }
-);
-
-comprobarTrivia.addEventListener(
-    "click",
-    () => {
-        if (!triviaActual) {
-            return;
-        }
-
-        const respuesta =
-            respuestaUsuario.value
-                .toLowerCase()
-                .trim()
-                .normalize("NFD")
-                .replace(
-                    /[\u0300-\u036f]/g,
-                    ""
-                );
-
-        const correcta =
-            triviaActual.respuesta
-                .toLowerCase()
-                .normalize("NFD")
-                .replace(
-                    /[\u0300-\u036f]/g,
-                    ""
-                );
-
-        if (
-            respuesta === correcta
-        ) {
-            resultadoJuego.textContent =
-                "🎉 ¡Correcto! Ganaste un punto.";
+            opcion();
 
             actualizarPuntos(1);
+        }
+    );
+}
 
-            cambiarEstado(
-                "feliz"
+
+if (triviaBtn) {
+
+    triviaBtn.addEventListener(
+        "click",
+        () => {
+
+            triviaActual =
+                trivias[
+                    Math.floor(
+                        Math.random() *
+                        trivias.length
+                    )
+                ];
+
+            adivinanzaActual = null;
+
+            zonaRespuesta.classList.remove(
+                "oculto"
             );
 
-            hablar(
-                "¡Correcto! Ganaste un punto."
+            opcionesPPT.classList.add(
+                "oculto"
             );
 
-        } else {
+            respuestaUsuario.value = "";
+
             resultadoJuego.textContent =
-                `❌ Incorrecto. La respuesta era: ${triviaActual.respuesta}.`;
+                triviaActual.pregunta;
 
-            cambiarEstado(
-                "sorprendido"
-            );
-
-            hablar(
-                `Incorrecto. La respuesta correcta era ${triviaActual.respuesta}.`
+            responder(
+                triviaActual.pregunta
             );
         }
+    );
+}
 
-        zonaRespuesta.classList.add(
-            "oculto"
-        );
 
-        programarDormir();
-    }
-);
+if (adivinanzaBtn) {
 
-piedraPapelTijeraBtn.addEventListener(
-    "click",
-    () => {
-        opcionesPPT.classList.toggle(
-            "oculto"
-        );
+    adivinanzaBtn.addEventListener(
+        "click",
+        () => {
 
-        zonaRespuesta.classList.add(
-            "oculto"
-        );
+            adivinanzaActual =
+                adivinanzas[
+                    Math.floor(
+                        Math.random() *
+                        adivinanzas.length
+                    )
+                ];
 
-        resultadoJuego.textContent =
-            "Elige piedra, papel o tijera.";
+            triviaActual = null;
 
-        hablar(
-            "Elige piedra, papel o tijera."
-        );
-    }
-);
+            zonaRespuesta.classList.remove(
+                "oculto"
+            );
+
+            opcionesPPT.classList.add(
+                "oculto"
+            );
+
+            respuestaUsuario.value = "";
+
+            resultadoJuego.textContent =
+                adivinanzaActual.pregunta;
+
+            responder(
+                adivinanzaActual.pregunta
+            );
+        }
+    );
+}
+
+
+if (chisteBtn) {
+
+    chisteBtn.addEventListener(
+        "click",
+        () => {
+
+            const chiste =
+                chistes[
+                    Math.floor(
+                        Math.random() *
+                        chistes.length
+                    )
+                ];
+
+            resultadoJuego.textContent =
+                chiste;
+
+            responder(chiste);
+
+            actualizarPuntos(1);
+        }
+    );
+}
+
+
+if (piedraPapelTijeraBtn) {
+
+    piedraPapelTijeraBtn.addEventListener(
+        "click",
+        () => {
+
+            opcionesPPT.classList.remove(
+                "oculto"
+            );
+
+            zonaRespuesta.classList.add(
+                "oculto"
+            );
+
+            resultadoJuego.textContent =
+                "Elige piedra, papel o tijera.";
+
+            responder(
+                "Elige piedra, papel o tijera."
+            );
+        }
+    );
+}
+
 
 document
     .querySelectorAll(
         "#opcionesPPT button"
     )
     .forEach(boton => {
+
         boton.addEventListener(
             "click",
             () => {
+
                 const jugador =
-                    boton.dataset
-                        .eleccion;
+                    boton.dataset.eleccion;
 
                 const opciones = [
                     "piedra",
@@ -1047,169 +1013,255 @@ document
                 ];
 
                 const computadora =
-                    elegirAleatorio(
-                        opciones
-                    );
+                    opciones[
+                        Math.floor(
+                            Math.random() *
+                            opciones.length
+                        )
+                    ];
 
-                let resultado =
-                    "";
+                let resultado;
 
                 if (
-                    jugador ===
-                    computadora
+                    jugador === computadora
                 ) {
+
                     resultado =
-                        `Empate. Los dos elegimos ${jugador}.`;
+                        `Empate. Tachi eligió ${computadora}.`;
 
                 } else if (
-                    (
-                        jugador ===
-                        "piedra" &&
-                        computadora ===
-                        "tijera"
-                    ) ||
-                    (
-                        jugador ===
-                        "papel" &&
-                        computadora ===
-                        "piedra"
-                    ) ||
-                    (
-                        jugador ===
-                        "tijera" &&
-                        computadora ===
-                        "papel"
-                    )
-                ) {
-                    resultado =
-                        `¡Ganaste! Tachi eligió ${computadora}. Ganaste un punto.`;
 
-                    actualizarPuntos(
-                        1
-                    );
+                    (jugador === "piedra" &&
+                        computadora === "tijera") ||
+
+                    (jugador === "papel" &&
+                        computadora === "piedra") ||
+
+                    (jugador === "tijera" &&
+                        computadora === "papel")
+
+                ) {
+
+                    resultado =
+                        `Ganaste. Tachi eligió ${computadora}.`;
+
+                    actualizarPuntos(1);
 
                 } else {
+
                     resultado =
                         `Perdiste. Tachi eligió ${computadora}.`;
+
+                    actualizarPuntos(-1);
                 }
 
                 resultadoJuego.textContent =
                     resultado;
 
-                if (
-                    resultado.startsWith(
-                        "¡Ganaste"
-                    )
-                ) {
-                    cambiarEstado(
-                        "feliz"
-                    );
-                } else {
-                    cambiarEstado(
-                        "sorprendido"
-                    );
-                }
-
-                hablar(resultado);
-
-                programarDormir();
+                responder(resultado);
             }
         );
     });
 
-sorprendemeBtn.addEventListener(
-    "click",
-    () => {
-        const acciones = [
-            () =>
-                chisteBtn.click(),
 
-            () =>
-                adivinanzaBtn.click(),
+if (comprobarTrivia) {
 
-            () =>
-                triviaBtn.click(),
+    comprobarTrivia.addEventListener(
+        "click",
+        () => {
 
-            () =>
-                piedraPapelTijeraBtn.click()
-        ];
+            const respuesta =
+                respuestaUsuario.value
+                    .trim()
+                    .toLowerCase();
 
-        elegirAleatorio(
-            acciones
-        )();
-    }
-);
+            if (!respuesta) return;
 
-function procesarComando(
-    texto
-) {
-    if (!texto) {
+            let correcta = false;
+
+            if (triviaActual) {
+
+                correcta =
+                    respuesta ===
+                    triviaActual.respuesta
+                        .toLowerCase();
+
+            }
+
+            if (adivinanzaActual) {
+
+                correcta =
+                    respuesta.includes(
+                        adivinanzaActual.respuesta
+                    );
+            }
+
+            if (correcta) {
+
+                resultadoJuego.textContent =
+                    "¡Correcto! 🎉";
+
+                responder(
+                    "¡Correcto! Muy bien."
+                );
+
+                actualizarPuntos(2);
+
+            } else {
+
+                resultadoJuego.textContent =
+                    "No es correcto. Inténtalo de nuevo.";
+
+                responder(
+                    "No es correcto. Inténtalo de nuevo."
+                );
+            }
+        }
+    );
+}
+
+
+if (respuestaUsuario) {
+
+    respuestaUsuario.addEventListener(
+        "keydown",
+        event => {
+
+            if (event.key === "Enter") {
+                comprobarTrivia.click();
+            }
+        }
+    );
+}
+
+
+if (archivoMusica) {
+
+    archivoMusica.addEventListener(
+        "change",
+        () => {
+
+            const archivo =
+                archivoMusica.files[0];
+
+            if (!archivo) return;
+
+            const url =
+                URL.createObjectURL(archivo);
+
+            reproductor.src = url;
+
+            reproductor.play().catch(
+                error => {
+                    console.error(error);
+                }
+            );
+        }
+    );
+}
+
+
+if (playMusica) {
+
+    playMusica.addEventListener(
+        "click",
+        () => {
+
+            reproductor.play().catch(
+                error => {
+                    console.error(error);
+                }
+            );
+        }
+    );
+}
+
+
+if (pausaMusica) {
+
+    pausaMusica.addEventListener(
+        "click",
+        () => {
+
+            reproductor.pause();
+        }
+    );
+}
+
+
+if (stopMusica) {
+
+    stopMusica.addEventListener(
+        "click",
+        () => {
+
+            reproductor.pause();
+            reproductor.currentTime = 0;
+        }
+    );
+}
+
+
+if (volumenMusica) {
+
+    volumenMusica.addEventListener(
+        "input",
+        () => {
+
+            reproductor.volume =
+                Number(
+                    volumenMusica.value
+                );
+        }
+    );
+}
+
+
+function procesarComando(texto) {
+
+    const comando =
+        texto.toLowerCase().trim();
+
+
+    if (
+        comando.includes("hora") ||
+        comando.includes("qué hora") ||
+        comando.includes("que hora")
+    ) {
+
+        const hora =
+            obtenerHora();
+
         responder(
-            "No escuché nada."
+            `Son las ${hora}.`
         );
 
         return;
     }
 
-    respuestaVoz.textContent =
-        `Escuché: "${texto}"`;
 
     if (
-        texto.includes(
-            "qué hora"
-        ) ||
-        texto.includes(
-            "que hora"
-        ) ||
-        texto.includes(
-            "hora es"
-        )
+        comando.includes("fecha") ||
+        comando.includes("qué día") ||
+        comando.includes("que dia")
     ) {
+
+        const fecha =
+            obtenerFecha();
+
         responder(
-            `Son las ${obtenerHora()}.`
+            `Hoy es ${fecha}.`
         );
 
         return;
     }
 
-    if (
-        texto.includes(
-            "qué fecha"
-        ) ||
-        texto.includes(
-            "que fecha"
-        ) ||
-        texto.includes(
-            "qué día"
-        ) ||
-        texto.includes(
-            "que dia"
-        )
-    ) {
-        responder(
-            `Hoy es ${obtenerFecha()}.`
-        );
-
-        return;
-    }
 
     if (
-        texto.includes(
-            "hola"
-        ) ||
-        texto.includes(
-            "buenos días"
-        ) ||
-        texto.includes(
-            "buenas tardes"
-        ) ||
-        texto.includes(
-            "buenas noches"
-        )
+        comando.includes("hola") ||
+        comando.includes("buenas") ||
+        comando.includes("hey")
     ) {
-        cambiarEstado(
-            "feliz"
-        );
 
         responder(
             "Hola. Soy Tachi. ¿En qué puedo ayudarte?"
@@ -1218,20 +1270,12 @@ function procesarComando(
         return;
     }
 
+
     if (
-        texto.includes(
-            "cómo estás"
-        ) ||
-        texto.includes(
-            "como estas"
-        ) ||
-        texto.includes(
-            "cómo te sientes"
-        ) ||
-        texto.includes(
-            "como te sientes"
-        )
+        comando.includes("cómo estás") ||
+        comando.includes("como estas")
     ) {
+
         responder(
             "Estoy funcionando perfectamente y lista para ayudarte."
         );
@@ -1239,292 +1283,128 @@ function procesarComando(
         return;
     }
 
+
     if (
-        texto.includes(
-            "adiós"
-        ) ||
-        texto.includes(
-            "adios"
-        ) ||
-        texto.includes(
-            "hasta luego"
-        )
+        comando.includes("adiós") ||
+        comando.includes("adios") ||
+        comando.includes("chao")
     ) {
+
         responder(
-            "Hasta luego. Te estaré esperando."
+            "Hasta luego. Fue un gusto ayudarte."
         );
 
         return;
     }
 
+
     if (
-        texto.includes(
-            "investiga"
-        ) ||
-        texto.includes(
-            "investigar"
-        ) ||
-        texto.includes(
-            "busca"
-        ) ||
-        texto.includes(
-            "buscar"
-        )
+        comando.includes("investiga") ||
+        comando.includes("investigar") ||
+        comando.includes("busca")
     ) {
-        const pregunta =
-            texto
-                .replace(
-                    "investiga",
-                    ""
-                )
-                .replace(
-                    "investigar",
-                    ""
-                )
-                .replace(
-                    "busca",
-                    ""
-                )
-                .replace(
-                    "buscar",
-                    ""
-                )
+
+        let tema =
+            comando
+                .replace("investiga", "")
+                .replace("investigar", "")
+                .replace("busca", "")
                 .trim();
 
-        if (pregunta) {
-            investigarTema(
-                pregunta
-            );
-        } else {
+        if (!tema) {
+
             responder(
-                "Claro. Dime qué quieres que investigue."
-            );
-        }
-
-        return;
-    }
-
-    if (
-        texto.includes(
-            "sorpréndeme"
-        ) ||
-        texto.includes(
-            "sorprendeme"
-        )
-    ) {
-        sorprendemeBtn.click();
-        return;
-    }
-
-    if (
-        texto.includes(
-            "trivia"
-        )
-    ) {
-        triviaBtn.click();
-        return;
-    }
-
-    if (
-        texto.includes(
-            "adivinanza"
-        ) ||
-        texto.includes(
-            "acertijo"
-        )
-    ) {
-        adivinanzaBtn.click();
-        return;
-    }
-
-    if (
-        texto.includes(
-            "chiste"
-        ) ||
-        texto.includes(
-            "cuéntame un chiste"
-        ) ||
-        texto.includes(
-            "cuentame un chiste"
-        )
-    ) {
-        chisteBtn.click();
-        return;
-    }
-
-    if (
-        texto.includes(
-            "piedra papel tijera"
-        ) ||
-        texto.includes(
-            "piedra papel o tijera"
-        )
-    ) {
-        piedraPapelTijeraBtn.click();
-        return;
-    }
-
-    if (
-        texto.includes(
-            "matemática"
-        ) ||
-        texto.includes(
-            "matematica"
-        ) ||
-        texto.includes(
-            "calcula"
-        )
-    ) {
-        const operacion =
-            texto
-                .replace(
-                    "matemática",
-                    ""
-                )
-                .replace(
-                    "matematica",
-                    ""
-                )
-                .replace(
-                    "calcula",
-                    ""
-                )
-                .trim();
-
-        const resultado =
-            calcularExpresion(
-                operacion
-                    .replace(
-                        /más/g,
-                        "+"
-                    )
-                    .replace(
-                        /menos/g,
-                        "-"
-                    )
-                    .replace(
-                        /por/g,
-                        "*"
-                    )
-                    .replace(
-                        /dividido entre/g,
-                        "/"
-                    )
-            );
-
-        if (
-            resultado !== null
-        ) {
-            responder(
-                `El resultado es ${resultado}.`
-            );
-        } else {
-            responder(
-                "No pude resolver esa operación. Puedes escribirla en la sección de matemáticas."
-            );
-        }
-
-        return;
-    }
-
-    responder(
-        `Entendí que dijiste: ${texto}. Todavía estoy aprendiendo más comandos.`
-    );
-}
-
-archivoMusica.addEventListener(
-    "change",
-    () => {
-        const archivo =
-            archivoMusica.files[0];
-
-        if (!archivo) return;
-
-        const url =
-            URL.createObjectURL(
-                archivo
-            );
-
-        reproductor.src =
-            url;
-
-        reproductor.load();
-
-        resultadoJuego.textContent =
-            `🎵 Música cargada: ${archivo.name}`;
-
-        cambiarEstado(
-            "feliz"
-        );
-
-        hablar(
-            `He cargado la música ${archivo.name}.`
-        );
-
-        programarDormir();
-    }
-);
-
-playMusica.addEventListener(
-    "click",
-    () => {
-        if (
-            !reproductor.src
-        ) {
-            hablar(
-                "Primero selecciona una canción."
+                "Dime qué quieres que investigue."
             );
 
             return;
         }
 
-        reproductor.play();
+        investigarTema(tema);
 
-        cambiarEstado(
-            "feliz"
+        return;
+    }
+
+
+    if (
+        comando.includes("sorpréndeme") ||
+        comando.includes("sorprendeme")
+    ) {
+
+        sorprendemeBtn.click();
+
+        return;
+    }
+
+
+    if (comando.includes("trivia")) {
+
+        triviaBtn.click();
+
+        return;
+    }
+
+
+    if (
+        comando.includes("adivinanza") ||
+        comando.includes("acertijo")
+    ) {
+
+        adivinanzaBtn.click();
+
+        return;
+    }
+
+
+    if (
+        comando.includes("chiste") ||
+        comando.includes("cuéntame un chiste") ||
+        comando.includes("cuentame un chiste")
+    ) {
+
+        chisteBtn.click();
+
+        return;
+    }
+
+
+    if (
+        comando.includes("piedra") ||
+        comando.includes("papel") ||
+        comando.includes("tijera")
+    ) {
+
+        piedraPapelTijeraBtn.click();
+
+        return;
+    }
+
+
+    const resultado =
+        calcularExpresion(comando);
+
+    if (resultado !== null) {
+
+        const resultadoFinal =
+            Number.isInteger(resultado)
+                ? resultado
+                : Number(
+                    resultado.toFixed(4)
+                );
+
+        responder(
+            `El resultado es ${resultadoFinal}.`
         );
+
+        return;
     }
-);
 
-pausaMusica.addEventListener(
-    "click",
-    () => {
-        reproductor.pause();
 
-        cambiarEstado(
-            "normal"
-        );
+    responder(
+        "Entendí lo que dijiste, pero todavía no tengo una respuesta programada para eso."
+    );
+}
 
-        programarDormir();
-    }
-);
 
-stopMusica.addEventListener(
-    "click",
-    () => {
-        reproductor.pause();
-
-        reproductor.currentTime =
-            0;
-
-        cambiarEstado(
-            "normal"
-        );
-
-        programarDormir();
-    }
-);
-
-volumenMusica.addEventListener(
-    "input",
-    () => {
-        reproductor.volume =
-            volumenMusica.value;
-    }
-);
-
-cambiarEstado(
-    "normal"
-);
-
+cambiarEstado("normal");
 programarDormir();
