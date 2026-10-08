@@ -1,1821 +1,976 @@
-const mensaje = document.getElementById("mensaje");
-const boton = document.getElementById("hablar");
-const botonRepetir = document.getElementById("repetir");
-const textoRepetir = document.getElementById("textoRepetir");
-const robot = document.querySelector(".robot");
+const hablarBtn = document.getElementById("hablar");
+const respuestaVoz = document.getElementById("respuestaVoz");
 
+const textoRepetir = document.getElementById("textoRepetir");
+const repetirBtn = document.getElementById("repetir");
+
+const preguntaInvestigacion = document.getElementById("preguntaInvestigacion");
+const investigarBtn = document.getElementById("investigar");
+const resultadoInvestigacion = document.getElementById("resultadoInvestigacion");
+const abrirBusquedaBtn = document.getElementById("abrirBusqueda");
+
+const rostroTachi = document.getElementById("rostroTachi");
+const estadoTachi = document.getElementById("estadoTachi");
+
+const ecuacion = document.getElementById("ecuacion");
+const resolverBtn = document.getElementById("resolver");
+const resultadoMatematico = document.getElementById("resultadoMatematico");
+
+const archivoMusica = document.getElementById("archivoMusica");
+const reproductor = document.getElementById("reproductor");
+const playMusica = document.getElementById("playMusica");
+const pausaMusica = document.getElementById("pausaMusica");
+const stopMusica = document.getElementById("stopMusica");
+const volumenMusica = document.getElementById("volumenMusica");
+
+const sorprendemeBtn = document.getElementById("sorprendeme");
+const triviaBtn = document.getElementById("trivia");
+const adivinanzaBtn = document.getElementById("adivinanza");
+const chisteBtn = document.getElementById("chiste");
+const piedraPapelTijeraBtn = document.getElementById("piedraPapelTijera");
+
+const puntosTexto = document.getElementById("puntos");
+const resultadoJuego = document.getElementById("resultadoJuego");
+const opcionesPPT = document.getElementById("opcionesPPT");
+
+const respuestaUsuario = document.getElementById("respuestaUsuario");
+const comprobarTriviaBtn = document.getElementById("comprobarTrivia");
+const zonaRespuesta = document.getElementById("zonaRespuesta");
+
+let puntos = 0;
+let estadoActual = "normal";
+let temporizadorDormir;
+
+const rostrosTachi = {
+  normal: "tachi-normal.png",
+  escuchando: "tachi-escuchando.png",
+  hablando: "tachi-hablando.png",
+  investigando: "tachi-investigando.png",
+  sorprendido: "tachi-sorprendido.png",
+  feliz: "tachi-feliz.png",
+  dormido: "tachi-dormido.png"
+};
+
+/* =========================
+   CAMBIO DE ESTADO
+========================= */
+
+function cambiarEstado(estado) {
+  if (!rostrosTachi[estado]) {
+    estado = "normal";
+  }
+
+  estadoActual = estado;
+
+  rostroTachi.parentElement.classList.add("cambiando");
+
+  setTimeout(() => {
+    rostroTachi.src = rostrosTachi[estado];
+
+    const nombres = {
+      normal: "Normal",
+      escuchando: "Escuchando",
+      hablando: "Hablando",
+      investigando: "Investigando",
+      sorprendido: "Sorprendido",
+      feliz: "Feliz",
+      dormido: "Dormido"
+    };
+
+    estadoTachi.textContent = nombres[estado];
+
+    document.body.className =
+      document.body.className
+        .split(" ")
+        .filter(clase => !clase.startsWith("tachi-"))
+        .join(" ");
+
+    document.body.classList.add(`tachi-${estado}`);
+
+    rostroTachi.parentElement.classList.remove("cambiando");
+  }, 150);
+}
 
 /* =========================
    VOZ DE TACHI
 ========================= */
 
 function hablar(texto) {
+  if (!texto) return;
 
-    if ("speechSynthesis" in window) {
+  speechSynthesis.cancel();
 
-        window.speechSynthesis.cancel();
+  cambiarEstado("hablando");
 
-        const voz =
-            new SpeechSynthesisUtterance(texto);
+  const voz = new SpeechSynthesisUtterance(texto);
+  voz.lang = "es-SV";
+  voz.rate = 1;
+  voz.pitch = 1;
 
-        voz.lang = "es-SV";
-        voz.rate = 1;
-        voz.pitch = 1;
+  voz.onend = () => {
+    cambiarEstado("normal");
+    iniciarTemporizadorDormir();
+  };
 
-        window.speechSynthesis.speak(voz);
-    }
+  speechSynthesis.speak(voz);
 }
-
 
 /* =========================
-   MOSTRAR MENSAJE
+   DESPERTAR Y DORMIR
 ========================= */
 
-function mostrarMensaje(texto) {
-
-    mensaje.textContent = texto;
+function despertarRobot() {
+  clearTimeout(temporizadorDormir);
+  cambiarEstado("normal");
 }
 
+function dormirRobot() {
+  if (speechSynthesis.speaking) return;
+
+  cambiarEstado("dormido");
+}
+
+function iniciarTemporizadorDormir() {
+  clearTimeout(temporizadorDormir);
+
+  temporizadorDormir = setTimeout(() => {
+    dormirRobot();
+  }, 5000);
+}
 
 /* =========================
-   NORMALIZAR TEXTO
+   REPETIR TEXTO
 ========================= */
 
-function normalizarTexto(texto) {
+repetirBtn.addEventListener("click", () => {
+  despertarRobot();
 
-    return texto
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
-}
+  const texto = textoRepetir.value.trim();
 
+  if (!texto) {
+    hablar("Escribe algo para que pueda repetirlo.");
+    return;
+  }
+
+  respuestaVoz.textContent = texto;
+  hablar(texto);
+});
+
+textoRepetir.addEventListener("keydown", evento => {
+  if (evento.key === "Enter") {
+    repetirBtn.click();
+  }
+});
 
 /* =========================
    RECONOCIMIENTO DE VOZ
 ========================= */
 
 const SpeechRecognition =
-    window.SpeechRecognition ||
-    window.webkitSpeechRecognition;
+  window.SpeechRecognition ||
+  window.webkitSpeechRecognition;
 
-let reconocimiento = null;
+let recognition = null;
 
 if (SpeechRecognition) {
+  recognition = new SpeechRecognition();
 
-    reconocimiento =
-        new SpeechRecognition();
+  recognition.lang = "es-SV";
+  recognition.continuous = false;
+  recognition.interimResults = false;
 
-    reconocimiento.lang = "es-SV";
-    reconocimiento.continuous = false;
-    reconocimiento.interimResults = false;
+  recognition.onstart = () => {
+    despertarRobot();
+    cambiarEstado("escuchando");
+    respuestaVoz.textContent = "🎤 Te escucho...";
+  };
 
+  recognition.onresult = evento => {
+    const texto = evento.results[0][0].transcript;
 
-    reconocimiento.onstart = function () {
+    respuestaVoz.textContent = `Tú: ${texto}`;
 
-        robot.classList.remove("dormido");
+    procesarComando(texto);
+  };
 
-        mostrarMensaje(
-            "🎤 Te escucho..."
-        );
-    };
+  recognition.onerror = () => {
+    cambiarEstado("normal");
+    respuestaVoz.textContent = "No pude entenderte 😕";
+    iniciarTemporizadorDormir();
+  };
 
+  recognition.onend = () => {
+    if (estadoActual === "escuchando") {
+      cambiarEstado("normal");
+    }
 
-    reconocimiento.onresult = function (evento) {
-
-        const texto =
-            evento.results[0][0].transcript;
-
-        procesarComando(texto);
-    };
-
-
-    reconocimiento.onerror = function () {
-
-        mostrarMensaje(
-            "No pude entenderte 😕"
-        );
-    };
-
-
-    reconocimiento.onend = function () {
-
-        iniciarTemporizadorDormir();
-    };
-
-} else {
-
-    boton.disabled = true;
-
-    mostrarMensaje(
-        "Tu navegador no permite reconocimiento de voz."
-    );
+    iniciarTemporizadorDormir();
+  };
 }
 
+hablarBtn.addEventListener("click", () => {
+  if (!recognition) {
+    respuestaVoz.textContent =
+      "Tu navegador no permite reconocimiento de voz.";
+    return;
+  }
 
-/* =========================
-   BOTÓN HABLAR
-========================= */
+  despertarRobot();
 
-boton.addEventListener(
-    "click",
-    function () {
-
-        despertarRobot();
-
-        if (reconocimiento) {
-
-            try {
-
-                reconocimiento.start();
-
-            } catch (error) {
-
-                console.log(error);
-            }
-        }
-    }
-);
-
+  try {
+    recognition.start();
+  } catch (error) {
+    console.log("El reconocimiento ya estaba activo.");
+  }
+});
 
 /* =========================
    PROCESAR COMANDOS
 ========================= */
 
-function procesarComando(texto) {
+function procesarComando(textoOriginal) {
+  const texto = textoOriginal.toLowerCase().trim();
 
-    despertarRobot();
+  despertarRobot();
 
-    const textoMinusculas =
-        normalizarTexto(texto);
+  if (
+    texto.includes("qué hora") ||
+    texto.includes("que hora") ||
+    texto.includes("hora es")
+  ) {
+    const ahora = new Date();
 
+    let hora = ahora.getHours();
+    const minutos = String(ahora.getMinutes()).padStart(2, "0");
 
-    /* INVESTIGAR */
+    const periodo = hora >= 12 ? "PM" : "AM";
 
-    if (
-        textoMinusculas.startsWith("investiga") ||
-        textoMinusculas.startsWith("investigar") ||
-        textoMinusculas.startsWith("busca") ||
-        textoMinusculas.startsWith("buscar") ||
-        textoMinusculas.startsWith("quiero investigar")
-    ) {
+    hora = hora % 12;
 
-        let pregunta = texto;
+    if (hora === 0) hora = 12;
 
-        pregunta = pregunta
-            .replace(/^investiga\s*/i, "")
-            .replace(/^investigar\s*/i, "")
-            .replace(/^busca\s*/i, "")
-            .replace(/^buscar\s*/i, "")
-            .replace(/^quiero investigar\s*/i, "");
+    hablar(`Son las ${hora}:${minutos} ${periodo}.`);
+    return;
+  }
 
-        pregunta = pregunta.trim();
+  if (
+    texto.includes("qué fecha") ||
+    texto.includes("que fecha") ||
+    texto.includes("qué día") ||
+    texto.includes("que dia")
+  ) {
+    const fecha = new Date();
 
-        if (pregunta === "") {
+    const fechaTexto = fecha.toLocaleDateString("es-SV", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric"
+    });
 
-            mostrarMensaje(
-                "Dime qué quieres que investigue."
-            );
+    hablar(`Hoy es ${fechaTexto}.`);
+    return;
+  }
 
-            hablar(
-                "Dime qué quieres que investigue."
-            );
+  if (
+    texto.includes("hola") ||
+    texto.includes("buenos días") ||
+    texto.includes("buenos dias") ||
+    texto.includes("buenas tardes") ||
+    texto.includes("buenas noches")
+  ) {
+    cambiarEstado("feliz");
+    hablar("¡Hola! Me alegra escucharte.");
+    return;
+  }
 
-            return;
-        }
+  if (
+    texto.includes("cómo estás") ||
+    texto.includes("como estas")
+  ) {
+    cambiarEstado("feliz");
+    hablar("Estoy funcionando perfectamente y listo para ayudarte.");
+    return;
+  }
 
-        investigarEnInternet(
-            pregunta
-        );
+  if (
+    texto.includes("adiós") ||
+    texto.includes("adios") ||
+    texto.includes("hasta luego")
+  ) {
+    hablar("Hasta luego. Nos vemos pronto.");
+    return;
+  }
 
-        return;
+  if (
+    texto.startsWith("investiga ") ||
+    texto.startsWith("investigar ") ||
+    texto.startsWith("busca ") ||
+    texto.startsWith("buscar ") ||
+    texto.startsWith("quiero investigar ")
+  ) {
+    let pregunta = texto;
+
+    const prefijos = [
+      "quiero investigar ",
+      "investiga ",
+      "investigar ",
+      "busca ",
+      "buscar "
+    ];
+
+    for (const prefijo of prefijos) {
+      if (pregunta.startsWith(prefijo)) {
+        pregunta = pregunta.slice(prefijo.length).trim();
+        break;
+      }
     }
 
-
-    /* JUEGOS POR VOZ */
-
-    if (
-        textoMinusculas.includes("sorprendeme") ||
-        textoMinusculas.includes("sorprendeme tachi")
-    ) {
-
-        sorprender();
-
-        return;
-    }
-
-
-    if (
-        textoMinusculas.includes("hazme una trivia") ||
-        textoMinusculas.includes("trivia")
-    ) {
-
-        iniciarTrivia();
-
-        return;
-    }
-
-
-    if (
-        textoMinusculas.includes("adivinanza") ||
-        textoMinusculas.includes("dime una adivinanza")
-    ) {
-
-        iniciarAdivinanza();
-
-        return;
-    }
-
-
-    if (
-        textoMinusculas.includes("cuentame un chiste") ||
-        textoMinusculas.includes("cuentame un chiste")
-    ) {
-
-        contarChiste();
-
-        return;
-    }
-
-
-    if (
-        textoMinusculas.includes("piedra papel o tijera")
-    ) {
-
-        iniciarPPT();
-
-        return;
-    }
-
-
-    /* HORA */
-
-    if (
-        textoMinusculas.includes("hora") ||
-        textoMinusculas.includes("que hora es") ||
-        textoMinusculas.includes("dime la hora")
-    ) {
-
-        const ahora =
-            new Date();
-
-        let horas =
-            ahora.getHours();
-
-        const minutos =
-            String(
-                ahora.getMinutes()
-            ).padStart(2, "0");
-
-        const periodo =
-            horas >= 12
-                ? "PM"
-                : "AM";
-
-        horas =
-            horas % 12 || 12;
-
-        const respuesta =
-            `Son las ${horas}:${minutos} ${periodo}`;
-
-        mostrarMensaje(respuesta);
-
-        hablar(respuesta);
-
-        return;
-    }
-
-
-    /* FECHA */
-
-    if (
-        textoMinusculas.includes("fecha") ||
-        textoMinusculas.includes("que dia es") ||
-        textoMinusculas.includes("que dia es hoy") ||
-        textoMinusculas.includes("dime el dia") ||
-        textoMinusculas.includes("dime la fecha")
-    ) {
-
-        const fecha =
-            new Date();
-
-        const opciones = {
-
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-            year: "numeric"
-
-        };
-
-        const respuesta =
-            "Hoy es " +
-            fecha.toLocaleDateString(
-                "es-SV",
-                opciones
-            );
-
-        mostrarMensaje(respuesta);
-
-        hablar(respuesta);
-
-        return;
-    }
-
-
-    /* COMO ESTA */
-
-    if (
-        textoMinusculas.includes("como estas") ||
-        textoMinusculas.includes("como esta") ||
-        textoMinusculas.includes("como te sientes") ||
-        textoMinusculas.includes("estas bien")
-    ) {
-
-        const respuestas = [
-
-            "Estoy muy bien, gracias por preguntar.",
-
-            "Estoy funcionando perfectamente.",
-
-            "Todo bien por aquí. Estoy listo para ayudarte.",
-
-            "Estoy excelente y preparado para ayudarte."
-
-        ];
-
-        const respuesta =
-            respuestas[
-                Math.floor(
-                    Math.random() *
-                    respuestas.length
-                )
-            ];
-
-        mostrarMensaje(respuesta);
-
-        hablar(respuesta);
-
-        return;
-    }
-
-
-    /* SALUDOS */
-
-    if (
-        textoMinusculas.includes("hola") ||
-        textoMinusculas.includes("buenos dias") ||
-        textoMinusculas.includes("buenas tardes") ||
-        textoMinusculas.includes("buenas noches")
-    ) {
-
-        const respuesta =
-            "Hola, ¿cómo estás?";
-
-        mostrarMensaje(respuesta);
-
-        hablar(respuesta);
-
-        return;
-    }
-
-
-    /* DESPEDIDA */
-
-    if (
-        textoMinusculas.includes("adios") ||
-        textoMinusculas.includes("hasta luego")
-    ) {
-
-        const respuesta =
-            "Hasta luego. Aquí estaré cuando me necesites.";
-
-        mostrarMensaje(respuesta);
-
-        hablar(respuesta);
-
-        return;
-    }
-
-
-    /* RESPUESTA GENERAL */
-
-    const respuesta =
-        "Sí, dime.";
-
-    mostrarMensaje(respuesta);
-
-    hablar(respuesta);
+    investigarEnInternet(pregunta);
+    return;
+  }
+
+  if (
+    texto.includes("sorpréndeme") ||
+    texto.includes("sorprendeme")
+  ) {
+    sorpresa();
+    return;
+  }
+
+  if (
+    texto === "trivia" ||
+    texto.includes("hazme una trivia") ||
+    texto.includes("quiero una trivia")
+  ) {
+    iniciarTrivia();
+    return;
+  }
+
+  if (
+    texto.includes("adivinanza") ||
+    texto.includes("dime una adivinanza")
+  ) {
+    iniciarAdivinanza();
+    return;
+  }
+
+  if (
+    texto.includes("cuéntame un chiste") ||
+    texto.includes("cuentame un chiste") ||
+    texto === "chiste"
+  ) {
+    contarChiste();
+    return;
+  }
+
+  if (
+    texto.includes("piedra papel o tijera") ||
+    texto.includes("piedra papel tijera")
+  ) {
+    iniciarPiedraPapelTijera();
+    return;
+  }
+
+  if (
+    texto.includes("resolver") &&
+    texto.length > 9
+  ) {
+    const operacion = texto
+      .replace("resolver", "")
+      .trim();
+
+    resolverMatematica(operacion);
+    return;
+  }
+
+  hablar(
+    "No reconocí ese comando. Puedes pedirme la hora, la fecha, una investigación, una trivia, una adivinanza, un chiste o jugar."
+  );
 }
-
 
 /* =========================
    INVESTIGACIÓN
 ========================= */
 
-const preguntaInvestigacion =
-    document.getElementById(
-        "preguntaInvestigacion"
-    );
+async function investigarEnInternet(pregunta) {
+  if (!pregunta) {
+    hablar("Dime qué quieres investigar.");
+    return;
+  }
 
-const botonInvestigar =
-    document.getElementById(
-        "investigar"
-    );
+  clearTimeout(temporizadorDormir);
 
-const resultadoInvestigacion =
-    document.getElementById(
-        "resultadoInvestigacion"
-    );
+  cambiarEstado("investigando");
 
-const abrirBusqueda =
-    document.getElementById(
-        "abrirBusqueda"
-    );
+  resultadoInvestigacion.textContent =
+    "🔎 Estoy investigando...";
 
-let ultimaBusqueda = "";
+  try {
+    const urlBusqueda =
+      "https://es.wikipedia.org/w/api.php" +
+      "?action=query" +
+      "&list=search" +
+      "&srsearch=" +
+      encodeURIComponent(pregunta) +
+      "&format=json" +
+      "&origin=*";
 
+    const respuesta = await fetch(urlBusqueda);
+    const datos = await respuesta.json();
 
-async function investigarEnInternet(
-    pregunta
-) {
+    if (
+      !datos.query ||
+      !datos.query.search ||
+      datos.query.search.length === 0
+    ) {
+      resultadoInvestigacion.textContent =
+        "No encontré información suficiente.";
 
-    despertarRobot();
-
-    pregunta =
-        pregunta.trim();
-
-    if (pregunta === "") {
-
-        resultadoInvestigacion.textContent =
-            "Escribe una pregunta primero.";
-
-        hablar(
-            "Escribe una pregunta primero."
-        );
-
-        return;
+      cambiarEstado("sorprendido");
+      hablar("No encontré información suficiente sobre eso.");
+      return;
     }
 
-    ultimaBusqueda =
-        pregunta;
+    const titulo = datos.query.search[0].title;
+
+    const urlArticulo =
+      "https://es.wikipedia.org/w/api.php" +
+      "?action=query" +
+      "&prop=extracts" +
+      "&exintro=1" +
+      "&explaintext=1" +
+      "&redirects=1" +
+      "&titles=" +
+      encodeURIComponent(titulo) +
+      "&format=json" +
+      "&origin=*";
+
+    const respuestaArticulo = await fetch(urlArticulo);
+    const datosArticulo = await respuestaArticulo.json();
+
+    const paginas = datosArticulo.query.pages;
+    const pagina = Object.values(paginas)[0];
+
+    const extracto =
+      pagina.extract ||
+      "No encontré una explicación disponible.";
+
+    resultadoInvestigacion.innerHTML = `
+      <strong>${escapeHTML(titulo)}</strong>
+      <br><br>
+      ${escapeHTML(extracto)}
+    `;
+
+    const textoVoz = resumirParaVoz(extracto);
+
+    hablar(
+      `Encontré información sobre ${titulo}. ${textoVoz}`
+    );
+
+  } catch (error) {
+    console.error(error);
 
     resultadoInvestigacion.textContent =
-        "🔎 Estoy investigando...";
+      "No pude conectarme a Internet.";
 
-    mostrarMensaje(
-        "🔎 Estoy investigando..."
+    cambiarEstado("sorprendido");
+
+    hablar(
+      "No pude conectarme a Internet en este momento."
     );
-
-    try {
-
-        const parametrosBusqueda =
-            new URLSearchParams({
-
-                action: "query",
-
-                list: "search",
-
-                srsearch: pregunta,
-
-                srlimit: "3",
-
-                format: "json",
-
-                origin: "*"
-
-            });
-
-
-        const respuestaBusqueda =
-            await fetch(
-                "https://es.wikipedia.org/w/api.php?" +
-                parametrosBusqueda.toString()
-            );
-
-
-        if (!respuestaBusqueda.ok) {
-
-            throw new Error(
-                "Error de conexión"
-            );
-        }
-
-
-        const datosBusqueda =
-            await respuestaBusqueda.json();
-
-
-        const resultados =
-            datosBusqueda?.query?.search ||
-            [];
-
-
-        if (
-            resultados.length === 0
-        ) {
-
-            resultadoInvestigacion.innerHTML =
-                `
-                <strong>
-                    No encontré información suficiente.
-                </strong>
-                <br><br>
-                Puedes ver más resultados en Internet.
-                `;
-
-            mostrarMensaje(
-                "No encontré información suficiente."
-            );
-
-            hablar(
-                "No encontré información suficiente."
-            );
-
-            return;
-        }
-
-
-        const titulo =
-            resultados[0].title;
-
-
-        const parametrosPagina =
-            new URLSearchParams({
-
-                action: "query",
-
-                prop: "extracts",
-
-                exintro: "1",
-
-                explaintext: "1",
-
-                redirects: "1",
-
-                titles: titulo,
-
-                format: "json",
-
-                origin: "*"
-
-            });
-
-
-        const respuestaPagina =
-            await fetch(
-                "https://es.wikipedia.org/w/api.php?" +
-                parametrosPagina.toString()
-            );
-
-
-        const datosPagina =
-            await respuestaPagina.json();
-
-
-        const paginas =
-            datosPagina?.query?.pages ||
-            {};
-
-
-        const pagina =
-            Object.values(paginas)[0];
-
-
-        let resumen =
-            pagina?.extract || "";
-
-
-        resumen =
-            resumen.trim();
-
-
-        if (resumen === "") {
-
-            resumen =
-                "Encontré el tema, pero no pude obtener un resumen.";
-        }
-
-
-        const resumenParaHablar =
-            resumirParaVoz(
-                resumen
-            );
-
-
-        resultadoInvestigacion.innerHTML =
-            `
-            <strong>
-                ${escapeHTML(titulo)}
-            </strong>
-
-            <p>
-                ${escapeHTML(resumen)}
-            </p>
-            `;
-
-
-        mostrarMensaje(
-            "Encontré información sobre " +
-            titulo
-        );
-
-
-        hablar(
-            "Encontré información sobre " +
-            titulo +
-            ". " +
-            resumenParaHablar
-        );
-
-
-    } catch (error) {
-
-        console.error(error);
-
-        resultadoInvestigacion.innerHTML =
-            `
-            <strong>
-                No pude realizar la investigación.
-            </strong>
-            <br><br>
-            Comprueba tu conexión a Internet.
-            `;
-
-        mostrarMensaje(
-            "No pude realizar la investigación."
-        );
-
-        hablar(
-            "No pude realizar la investigación."
-        );
-    }
+  }
 }
-
 
 function resumirParaVoz(texto) {
+  if (texto.length <= 850) {
+    return texto;
+  }
 
-    const limite =
-        850;
-
-    if (
-        texto.length <= limite
-    ) {
-
-        return texto;
-    }
-
-    return (
-        texto.substring(
-            0,
-            limite
-        ) +
-        "."
-    );
+  return texto.slice(0, 850) + "...";
 }
-
 
 function escapeHTML(texto) {
-
-    return texto
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-        .replace(
-            /</g,
-            "&lt;"
-        )
-        .replace(
-            />/g,
-            "&gt;"
-        )
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-        .replace(
-            /'/g,
-            "&#039;"
-        );
+  return texto
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
-
-botonInvestigar.addEventListener(
-    "click",
-    function () {
-
-        investigarEnInternet(
-            preguntaInvestigacion.value
-        );
-    }
-);
-
-
-preguntaInvestigacion.addEventListener(
-    "keydown",
-    function (evento) {
-
-        if (
-            evento.key === "Enter"
-        ) {
-
-            investigarEnInternet(
-                preguntaInvestigacion.value
-            );
-        }
-    }
-);
-
-
-abrirBusqueda.addEventListener(
-    "click",
-    function () {
-
-        const pregunta =
-            preguntaInvestigacion.value.trim() ||
-            ultimaBusqueda;
-
-        if (
-            pregunta === ""
-        ) {
-
-            mostrarMensaje(
-                "Escribe algo para buscar."
-            );
-
-            return;
-        }
-
-        const url =
-            "https://www.google.com/search?q=" +
-            encodeURIComponent(
-                pregunta
-            );
-
-        window.open(
-            url,
-            "_blank"
-        );
-    }
-);
-
-
-/* =========================
-   REPETIR TEXTO
-========================= */
-
-botonRepetir.addEventListener(
-    "click",
-    function () {
-
-        despertarRobot();
-
-        const texto =
-            textoRepetir.value.trim();
-
-        if (
-            texto === ""
-        ) {
-
-            mostrarMensaje(
-                "Escribe algo primero."
-            );
-
-            hablar(
-                "Escribe algo primero."
-            );
-
-            return;
-        }
-
-        mostrarMensaje(texto);
-
-        hablar(texto);
-
-        textoRepetir.value = "";
-    }
-);
-
-
-/* =========================
-   SISTEMA DE PUNTOS
-========================= */
-
-let puntos =
-    0;
-
-
-const elementoPuntos =
-    document.getElementById(
-        "puntos"
-    );
-
-
-function sumarPuntos(cantidad) {
-
-    puntos += cantidad;
-
-    elementoPuntos.textContent =
-        puntos;
-}
-
-
-/* =========================
-   ELEMENTOS DE JUEGOS
-========================= */
-
-const resultadoJuego =
-    document.getElementById(
-        "resultadoJuego"
-    );
-
-const opcionesPPT =
-    document.getElementById(
-        "opcionesPPT"
-    );
-
-const respuestaTrivia =
-    document.getElementById(
-        "respuestaTrivia"
-    );
-
-const respuestaUsuario =
-    document.getElementById(
-        "respuestaUsuario"
-    );
-
-const comprobarTrivia =
-    document.getElementById(
-        "comprobarTrivia"
-    );
-
-
-/* =========================
-   CHISTES
-========================= */
-
-const chistes = [
-
-    "¿Qué hace una abeja en el gimnasio? ¡Zum-ba!",
-
-    "¿Cuál es el colmo de un electricista? No encontrar su corriente de trabajo.",
-
-    "¿Qué le dijo un techo a otro techo? Techo de menos.",
-
-    "¿Qué hace una computadora cuando tiene frío? Cierra Windows.",
-
-    "¿Por qué el libro de matemáticas estaba triste? Porque tenía demasiados problemas."
-
-];
-
-
-function contarChiste() {
-
-    ocultarJuegos();
-
-    const chiste =
-        chistes[
-            Math.floor(
-                Math.random() *
-                chistes.length
-            )
-        ];
-
-    resultadoJuego.textContent =
-        "😂 " + chiste;
-
-    mostrarMensaje(
-        "Te voy a contar un chiste."
-    );
-
-    hablar(chiste);
-}
-
-
-/* =========================
-   ADIVINANZAS
-========================= */
-
-const adivinanzas = [
-
-    {
-        pregunta:
-            "Tengo agujas y no sé coser. ¿Qué soy?",
-
-        respuesta:
-            "reloj"
-    },
-
-    {
-        pregunta:
-            "Cuanto más quitas, más grande se vuelve. ¿Qué es?",
-
-        respuesta:
-            "agujero"
-    },
-
-    {
-        pregunta:
-            "Tiene dientes pero no puede comer. ¿Qué es?",
-
-        respuesta:
-            "peine"
-    },
-
-    {
-        pregunta:
-            "Vuelo sin alas y lloro sin ojos. ¿Qué soy?",
-
-        respuesta:
-            "nube"
-    }
-
-];
-
-
-let adivinanzaActual =
-    null;
-
-
-function iniciarAdivinanza() {
-
-    ocultarJuegos();
-
-    adivinanzaActual =
-        adivinanzas[
-            Math.floor(
-                Math.random() *
-                adivinanzas.length
-            )
-        ];
-
-    resultadoJuego.textContent =
-        "🧩 " +
-        adivinanzaActual.pregunta;
-
-    mostrarMensaje(
-        "Tengo una adivinanza para ti."
-    );
-
-    hablar(
-        adivinanzaActual.pregunta
-    );
-
-    respuestaTrivia.style.display =
-        "block";
-}
-
-
-/* =========================
-   TRIVIA
-========================= */
-
-const trivias = [
-
-    {
-        pregunta:
-            "¿Cuál es el planeta más grande del sistema solar?",
-
-        respuesta:
-            "jupiter"
-    },
-
-    {
-        pregunta:
-            "¿Cuántos continentes hay tradicionalmente?",
-
-        respuesta:
-            "7"
-    },
-
-    {
-        pregunta:
-            "¿En qué país se encuentra la Torre Eiffel?",
-
-        respuesta:
-            "francia"
-    },
-
-    {
-        pregunta:
-            "¿Cuál es el océano más grande?",
-
-        respuesta:
-            "pacifico"
-    },
-
-    {
-        pregunta:
-            "¿Cuántos lados tiene un hexágono?",
-
-        respuesta:
-            "6"
-    }
-
-];
-
-
-let triviaActual =
-    null;
-
-
-function iniciarTrivia() {
-
-    ocultarJuegos();
-
-    triviaActual =
-        trivias[
-            Math.floor(
-                Math.random() *
-                trivias.length
-            )
-        ];
-
-    resultadoJuego.textContent =
-        "🧠 " +
-        triviaActual.pregunta;
-
-    mostrarMensaje(
-        "Aquí tienes una pregunta de trivia."
-    );
-
-    hablar(
-        triviaActual.pregunta
-    );
-
-    respuestaTrivia.style.display =
-        "block";
-}
-
-
-comprobarTrivia.addEventListener(
-    "click",
-    comprobarRespuesta
-);
-
-
-respuestaUsuario.addEventListener(
-    "keydown",
-    function (evento) {
-
-        if (
-            evento.key === "Enter"
-        ) {
-
-            comprobarRespuesta();
-        }
-    }
-);
-
-
-function comprobarRespuesta() {
-
-    const respuesta =
-        normalizarTexto(
-            respuestaUsuario.value
-        ).trim();
-
-
-    if (
-        respuesta === ""
-    ) {
-
-        hablar(
-            "Escribe una respuesta primero."
-        );
-
-        return;
-    }
-
-
-    if (
-        triviaActual &&
-        respuesta ===
-        triviaActual.respuesta
-    ) {
-
-        sumarPuntos(10);
-
-        resultadoJuego.textContent =
-            "🎉 ¡Correcto! Ganaste 10 puntos.";
-
-        mostrarMensaje(
-            "¡Respuesta correcta!"
-        );
-
-        hablar(
-            "¡Correcto! Ganaste 10 puntos."
-        );
-
-    } else if (
-        adivinanzaActual &&
-        respuesta ===
-        adivinanzaActual.respuesta
-    ) {
-
-        sumarPuntos(10);
-
-        resultadoJuego.textContent =
-            "🎉 ¡Correcto! Ganaste 10 puntos.";
-
-        mostrarMensaje(
-            "¡Adivinaste!"
-        );
-
-        hablar(
-            "¡Correcto! Ganaste 10 puntos."
-        );
-
-    } else {
-
-        resultadoJuego.textContent =
-            "❌ No es correcto. ¡Inténtalo otra vez!";
-
-        mostrarMensaje(
-            "No es correcto."
-        );
-
-        hablar(
-            "No es correcto. Inténtalo otra vez."
-        );
-    }
-
-
-    respuestaUsuario.value = "";
-
-    triviaActual = null;
-    adivinanzaActual = null;
-}
-
-
-/* =========================
-   PIEDRA PAPEL TIJERA
-========================= */
-
-const opciones =
-    [
-        "piedra",
-        "papel",
-        "tijera"
-    ];
-
-
-function iniciarPPT() {
-
-    ocultarJuegos();
-
-    opcionesPPT.style.display =
-        "block";
-
-    resultadoJuego.textContent =
-        "✊ ¡Elige piedra, papel o tijera!";
-
-    mostrarMensaje(
-        "Elige tu jugada."
-    );
-
-    hablar(
-        "Elige piedra, papel o tijera."
-    );
-}
-
-
-document
-    .querySelectorAll(
-        "#opcionesPPT button"
-    )
-    .forEach(
-        function (boton) {
-
-            boton.addEventListener(
-                "click",
-                function () {
-
-                    jugarPPT(
-                        boton.dataset.eleccion
-                    );
-                }
-            );
-        }
-    );
-
-
-function jugarPPT(jugador) {
-
-    const computadora =
-        opciones[
-            Math.floor(
-                Math.random() *
-                opciones.length
-            )
-        ];
-
-
-    let resultado;
-
-
-    if (
-        jugador === computadora
-    ) {
-
-        resultado =
-            "🤝 ¡Empate!";
-
-    } else if (
-
-        (
-            jugador === "piedra" &&
-            computadora === "tijera"
-        ) ||
-
-        (
-            jugador === "papel" &&
-            computadora === "piedra"
-        ) ||
-
-        (
-            jugador === "tijera" &&
-            computadora === "papel"
-        )
-
-    ) {
-
-        resultado =
-            "🎉 ¡Ganaste! +10 puntos";
-
-        sumarPuntos(10);
-
-    } else {
-
-        resultado =
-            "😅 ¡Tachi ganó esta vez!";
-    }
-
-
-    const texto =
-        `Tú elegiste ${jugador}. Tachi eligió ${computadora}. ${resultado}`;
-
-
-    resultadoJuego.textContent =
-        texto;
-
-    mostrarMensaje(
-        resultado
-    );
-
-    hablar(texto);
-}
-
-
-/* =========================
-   SORPRÉNDEME
-========================= */
-
-function sorprender() {
-
-    const acciones = [
-
-        "trivia",
-
-        "adivinanza",
-
-        "chiste",
-
-        "ppt"
-
-    ];
-
-
-    const accion =
-        acciones[
-            Math.floor(
-                Math.random() *
-                acciones.length
-            )
-        ];
-
-
-    if (
-        accion === "trivia"
-    ) {
-
-        iniciarTrivia();
-
-    } else if (
-        accion === "adivinanza"
-    ) {
-
-        iniciarAdivinanza();
-
-    } else if (
-        accion === "chiste"
-    ) {
-
-        contarChiste();
-
-    } else {
-
-        iniciarPPT();
-    }
-}
-
-
-/* =========================
-   OCULTAR JUEGOS
-========================= */
-
-function ocultarJuegos() {
-
-    opcionesPPT.style.display =
-        "none";
-
-    respuestaTrivia.style.display =
-        "none";
-
-    triviaActual = null;
-    adivinanzaActual = null;
-
-    respuestaUsuario.value = "";
-}
-
-
-/* =========================
-   BOTONES
-========================= */
-
-document
-    .getElementById(
-        "sorprendeme"
-    )
-    .addEventListener(
-        "click",
-        sorprender
-    );
-
-
-document
-    .getElementById(
-        "trivia"
-    )
-    .addEventListener(
-        "click",
-        iniciarTrivia
-    );
-
-
-document
-    .getElementById(
-        "adivinanza"
-    )
-    .addEventListener(
-        "click",
-        iniciarAdivinanza
-    );
-
-
-document
-    .getElementById(
-        "chiste"
-    )
-    .addEventListener(
-        "click",
-        contarChiste
-    );
-
-
-document
-    .getElementById(
-        "piedraPapelTijera"
-    )
-    .addEventListener(
-        "click",
-        iniciarPPT
-    );
-
+investigarBtn.addEventListener("click", () => {
+  despertarRobot();
+
+  investigarEnInternet(
+    preguntaInvestigacion.value.trim()
+  );
+});
+
+preguntaInvestigacion.addEventListener("keydown", evento => {
+  if (evento.key === "Enter") {
+    investigarBtn.click();
+  }
+});
+
+abrirBusquedaBtn.addEventListener("click", () => {
+  const pregunta =
+    preguntaInvestigacion.value.trim();
+
+  if (!pregunta) return;
+
+  window.open(
+    "https://www.google.com/search?q=" +
+    encodeURIComponent(pregunta),
+    "_blank"
+  );
+});
 
 /* =========================
    MATEMÁTICAS
 ========================= */
 
-const ecuacion =
-    document.getElementById(
-        "ecuacion"
+function resolverMatematica(entrada) {
+  const texto = entrada.trim().toLowerCase();
+
+  if (!texto) {
+    resultadoMatematico.textContent =
+      "Escribe una operación o ecuación.";
+    return;
+  }
+
+  const ecuacionLineal =
+    texto.match(
+      /^(-?\d*\.?\d*)x\s*([+-])\s*(-?\d*\.?\d*)\s*=\s*(-?\d*\.?\d*)$/
     );
 
-const botonResolver =
-    document.getElementById(
-        "resolver"
+  if (ecuacionLineal) {
+    let a = ecuacionLineal[1];
+
+    if (a === "" || a === "+") {
+      a = 1;
+    } else if (a === "-") {
+      a = -1;
+    } else {
+      a = Number(a);
+    }
+
+    const operador = ecuacionLineal[2];
+    const b = Number(ecuacionLineal[3]);
+    const c = Number(ecuacionLineal[4]);
+
+    if (operador === "-") {
+      const resultado = (c + b) / a;
+
+      resultadoMatematico.textContent =
+        `x = ${resultado}`;
+
+      hablar(`La respuesta es x igual a ${resultado}.`);
+      return;
+    }
+
+    const resultado = (c - b) / a;
+
+    resultadoMatematico.textContent =
+      `x = ${resultado}`;
+
+    hablar(`La respuesta es x igual a ${resultado}.`);
+    return;
+  }
+
+  let expresion = texto
+    .replaceAll("×", "*")
+    .replaceAll("÷", "/")
+    .replaceAll(",", ".")
+    .replace(/\s+/g, "");
+
+  expresion = expresion.replace(
+    /(\d)\s*x\s*(\d)/g,
+    "$1*$2"
+  );
+
+  expresion = expresion.replace(
+    /(\d)\s*x/g,
+    "$1*"
+  );
+
+  expresion = expresion.replace(
+    /x\s*(\d)/g,
+    "*$1"
+  );
+
+  expresion = expresion.replace(
+    /(\d+)%/g,
+    "($1/100)"
+  );
+
+  expresion = expresion.replace(
+    /(\d+(?:\.\d+)?)\^(\d+(?:\.\d+)?)/g,
+    "Math.pow($1,$2)"
+  );
+
+  expresion = expresion.replace(
+    /√(\d+(?:\.\d+)?)/g,
+    "Math.sqrt($1)"
+  );
+
+  if (
+    !/^[0-9+\-*/().,%Mathpowsqrt]+$/.test(
+      expresion
+    )
+  ) {
+    resultadoMatematico.textContent =
+      "No pude interpretar esa operación.";
+
+    hablar(
+      "No pude interpretar esa operación."
     );
 
-const resultadoMatematico =
-    document.getElementById(
-        "resultadoMatematico"
-    );
+    return;
+  }
 
-
-function resolverMatematicas() {
-
-    const entrada =
-        ecuacion.value.trim();
+  try {
+    const resultado = Function(
+      `"use strict"; return (${expresion})`
+    )();
 
     if (
-        entrada === ""
+      typeof resultado !== "number" ||
+      !Number.isFinite(resultado)
     ) {
-
-        resultadoMatematico.textContent =
-            "Escribe una operación o ecuación.";
-
-        return;
+      throw new Error("Resultado inválido");
     }
 
+    resultadoMatematico.textContent =
+      `Resultado: ${resultado}`;
 
-    try {
+    hablar(`El resultado es ${resultado}.`);
 
-        let expresion =
-            entrada
-                .toLowerCase()
-                .replace(
-                    /,/g,
-                    "."
-                )
-                .replace(
-                    /×/g,
-                    "*"
-                )
-                .replace(
-                    /÷/g,
-                    "/"
-                )
-                .replace(
-                    /−/g,
-                    "-"
-                )
-                .replace(
-                    /\^/g,
-                    "**"
-                )
-                .replace(
-                    /√/g,
-                    "Math.sqrt"
-                );
+  } catch (error) {
+    resultadoMatematico.textContent =
+      "No pude resolver esa operación.";
 
-
-        expresion =
-            expresion.replace(
-                /(\d+(?:\.\d+)?)%/g,
-                "($1/100)"
-            );
-
-
-        expresion =
-            expresion.replace(
-                /(\d)\s*x\s*(\d)/g,
-                "$1*$2"
-            );
-
-
-        if (
-            /^[0-9+\-*/().%\s*xMath.sqrt]+$/i.test(
-                expresion
-            ) &&
-            !/[a-z]/i.test(
-                expresion.replace(
-                    /Math\.sqrt/gi,
-                    ""
-                )
-            )
-        ) {
-
-            const resultado =
-                Function(
-                    `"use strict"; return (${expresion})`
-                )();
-
-
-            if (
-                typeof resultado === "number" &&
-                Number.isFinite(resultado)
-            ) {
-
-                const respuesta =
-                    Number.isInteger(
-                        resultado
-                    )
-                        ? resultado
-                        : Number(
-                            resultado.toFixed(10)
-                        );
-
-
-                resultadoMatematico.textContent =
-                    `Resultado: ${respuesta}`;
-
-
-                mostrarMensaje(
-                    `El resultado es ${respuesta}`
-                );
-
-
-                hablar(
-                    `El resultado es ${respuesta}`
-                );
-
-
-                return;
-            }
-        }
-
-
-        const ecuacionCoincide =
-            entrada
-                .replace(
-                    /\s/g,
-                    ""
-                )
-                .match(
-                    /^([+-]?\d*\.?\d*)x([+-]\d+\.?\d*)?=([+-]?\d+\.?\d*)$/
-                );
-
-
-        if (
-            ecuacionCoincide
-        ) {
-
-            let a =
-                ecuacionCoincide[1];
-
-            let b =
-                ecuacionCoincide[2] ||
-                "0";
-
-            let c =
-                ecuacionCoincide[3];
-
-
-            if (
-                a === "" ||
-                a === "+"
-            ) {
-
-                a = 1;
-            }
-
-
-            if (
-                a === "-"
-            ) {
-
-                a = -1;
-            }
-
-
-            a = Number(a);
-            b = Number(b);
-            c = Number(c);
-
-
-            if (
-                a !== 0
-            ) {
-
-                const x =
-                    (c - b) / a;
-
-
-                const respuesta =
-                    Number.isInteger(x)
-                        ? x
-                        : Number(
-                            x.toFixed(10)
-                        );
-
-
-                resultadoMatematico.textContent =
-                    `x = ${respuesta}`;
-
-
-                mostrarMensaje(
-                    `La solución es x igual a ${respuesta}`
-                );
-
-
-                hablar(
-                    `La solución es x igual a ${respuesta}`
-                );
-
-
-                return;
-            }
-        }
-
-
-        resultadoMatematico.textContent =
-            "No pude resolver esa ecuación.";
-
-
-        hablar(
-            "No pude resolver esa ecuación."
-        );
-
-
-    } catch (error) {
-
-        resultadoMatematico.textContent =
-            "No pude entender la operación.";
-
-        hablar(
-            "No pude entender la operación."
-        );
-    }
+    hablar(
+      "No pude resolver esa operación."
+    );
+  }
 }
 
+resolverBtn.addEventListener("click", () => {
+  despertarRobot();
+  resolverMatematica(ecuacion.value);
+});
 
-botonResolver.addEventListener(
-    "click",
-    resolverMatematicas
-);
-
-
-ecuacion.addEventListener(
-    "keydown",
-    function (evento) {
-
-        if (
-            evento.key === "Enter"
-        ) {
-
-            resolverMatematicas();
-        }
-    }
-);
-
+ecuacion.addEventListener("keydown", evento => {
+  if (evento.key === "Enter") {
+    resolverBtn.click();
+  }
+});
 
 /* =========================
    MÚSICA
 ========================= */
 
-const archivoMusica =
-    document.getElementById(
-        "archivoMusica"
-    );
+archivoMusica.addEventListener("change", () => {
+  const archivo = archivoMusica.files[0];
 
-const audioMusica =
-    document.getElementById(
-        "audioMusica"
-    );
+  if (!archivo) return;
 
-const nombreCancion =
-    document.getElementById(
-        "nombreCancion"
-    );
+  reproductor.src =
+    URL.createObjectURL(archivo);
 
-const reproducirMusica =
-    document.getElementById(
-        "reproducirMusica"
-    );
+  reproductor.load();
 
-const pausarMusica =
-    document.getElementById(
-        "pausarMusica"
-    );
+  hablar(`He cargado ${archivo.name}.`);
+});
 
-const detenerMusica =
-    document.getElementById(
-        "detenerMusica"
-    );
+playMusica.addEventListener("click", () => {
+  reproductor.play();
+});
 
-const volumen =
-    document.getElementById(
-        "volumen"
-    );
+pausaMusica.addEventListener("click", () => {
+  reproductor.pause();
+});
 
+stopMusica.addEventListener("click", () => {
+  reproductor.pause();
+  reproductor.currentTime = 0;
+});
 
-archivoMusica.addEventListener(
-    "change",
-    function () {
-
-        const archivo =
-            archivoMusica.files[0];
-
-        if (
-            !archivo
-        ) {
-
-            return;
-        }
-
-
-        const url =
-            URL.createObjectURL(
-                archivo
-            );
-
-
-        audioMusica.src =
-            url;
-
-
-        nombreCancion.textContent =
-            archivo.name;
-    }
-);
-
-
-reproducirMusica.addEventListener(
-    "click",
-    function () {
-
-        if (
-            !audioMusica.src
-        ) {
-
-            return;
-        }
-
-
-        audioMusica.play();
-    }
-);
-
-
-pausarMusica.addEventListener(
-    "click",
-    function () {
-
-        audioMusica.pause();
-    }
-);
-
-
-detenerMusica.addEventListener(
-    "click",
-    function () {
-
-        audioMusica.pause();
-
-        audioMusica.currentTime =
-            0;
-    }
-);
-
-
-volumen.addEventListener(
-    "input",
-    function () {
-
-        audioMusica.volume =
-            volumen.value;
-    }
-);
-
+volumenMusica.addEventListener("input", () => {
+  reproductor.volume =
+    Number(volumenMusica.value);
+});
 
 /* =========================
-   DORMIR
+   ENTRETENIMIENTO
 ========================= */
 
-let temporizadorDormir =
-    null;
+const chistes = [
+  "¿Qué hace una abeja en el gimnasio? ¡Zum-ba!",
+  "¿Qué le dijo un techo a otro techo? Techo de menos.",
+  "¿Por qué el libro de matemáticas estaba triste? Porque tenía demasiados problemas.",
+  "¿Qué hace una computadora cuando tiene frío? Cierra Windows.",
+  "¿Cuál es el colmo de un electricista? No encontrar su corriente de trabajo."
+];
 
+const adivinanzas = [
+  {
+    pregunta: "Tengo agujas y no sé coser. ¿Qué soy?",
+    respuesta: "reloj"
+  },
+  {
+    pregunta: "Cuanto más me quitas, más grande me hago. ¿Qué soy?",
+    respuesta: "agujero"
+  },
+  {
+    pregunta: "Tengo dientes pero no puedo morder. ¿Qué soy?",
+    respuesta: "peine"
+  },
+  {
+    pregunta: "Vuelo sin alas y lloro sin ojos. ¿Qué soy?",
+    respuesta: "nube"
+  }
+];
 
-function despertarRobot() {
+const trivias = [
+  {
+    pregunta: "¿Cuál es el planeta más grande del sistema solar?",
+    respuesta: "jupiter"
+  },
+  {
+    pregunta: "¿Cuántos continentes hay en el modelo de siete continentes?",
+    respuesta: "7"
+  },
+  {
+    pregunta: "¿Cuál es el océano más grande?",
+    respuesta: "pacifico"
+  },
+  {
+    pregunta: "¿Qué animal es conocido como el rey de la selva?",
+    respuesta: "leon"
+  },
+  {
+    pregunta: "¿Cuántos lados tiene un hexágono?",
+    respuesta: "6"
+  }
+];
 
-    robot.classList.remove(
-        "dormido"
-    );
+let preguntaActual = null;
+let tipoPreguntaActual = null;
 
-    iniciarTemporizadorDormir();
+function actualizarPuntos(cantidad) {
+  puntos += cantidad;
+  puntosTexto.textContent = puntos;
 }
 
+function iniciarTrivia() {
+  const trivia =
+    trivias[Math.floor(Math.random() * trivias.length)];
 
-function iniciarTemporizadorDormir() {
+  preguntaActual = trivia;
+  tipoPreguntaActual = "trivia";
 
-    clearTimeout(
-        temporizadorDormir
-    );
+  cambiarEstado("feliz");
 
+  resultadoJuego.textContent =
+    `🧠 ${trivia.pregunta}`;
 
-    temporizadorDormir =
-        setTimeout(
-            dormirRobot,
-            5000
-        );
+  zonaRespuesta.classList.remove("oculto");
+
+  hablar(trivia.pregunta);
 }
 
+function iniciarAdivinanza() {
+  const adivinanza =
+    adivinanzas[
+      Math.floor(Math.random() * adivinanzas.length)
+    ];
 
-function dormirRobot() {
+  preguntaActual = adivinanza;
+  tipoPreguntaActual = "adivinanza";
 
-    robot.classList.add(
-        "dormido"
-    );
+  cambiarEstado("sorprendido");
 
-    mostrarMensaje(
-        "😴 Zzz..."
-    );
+  resultadoJuego.textContent =
+    `🧩 ${adivinanza.pregunta}`;
+
+  zonaRespuesta.classList.remove("oculto");
+
+  hablar(adivinanza.pregunta);
 }
 
+function contarChiste() {
+  const chiste =
+    chistes[
+      Math.floor(Math.random() * chistes.length)
+    ];
+
+  cambiarEstado("feliz");
+
+  resultadoJuego.textContent =
+    `😂 ${chiste}`;
+
+  hablar(chiste);
+}
+
+function iniciarPiedraPapelTijera() {
+  cambiarEstado("feliz");
+
+  opcionesPPT.classList.remove("oculto");
+  zonaRespuesta.classList.add("oculto");
+
+  resultadoJuego.textContent =
+    "✊ Elige piedra, papel o tijera.";
+
+  hablar("Elige piedra, papel o tijera.");
+}
+
+function jugarPPT(eleccionUsuario) {
+  const opciones = [
+    "piedra",
+    "papel",
+    "tijera"
+  ];
+
+  const eleccionTachi =
+    opciones[
+      Math.floor(Math.random() * opciones.length)
+    ];
+
+  let resultado;
+
+  if (eleccionUsuario === eleccionTachi) {
+    resultado = "Empate.";
+  } else if (
+    (eleccionUsuario === "piedra" &&
+      eleccionTachi === "tijera") ||
+    (eleccionUsuario === "papel" &&
+      eleccionTachi === "piedra") ||
+    (eleccionUsuario === "tijera" &&
+      eleccionTachi === "papel")
+  ) {
+    resultado = "¡Ganaste! +10 puntos.";
+    actualizarPuntos(10);
+    cambiarEstado("feliz");
+  } else {
+    resultado = "Esta vez gané yo.";
+    cambiarEstado("sorprendido");
+  }
+
+  resultadoJuego.textContent =
+    `Tú: ${eleccionUsuario} | Tachi: ${eleccionTachi} | ${resultado}`;
+
+  hablar(
+    `Tú elegiste ${eleccionUsuario} y yo elegí ${eleccionTachi}. ${resultado}`
+  );
+}
+
+function comprobarRespuesta() {
+  if (!preguntaActual) return;
+
+  const respuesta =
+    respuestaUsuario.value
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+
+  const correcta =
+    preguntaActual.respuesta
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+
+  if (respuesta === correcta) {
+    actualizarPuntos(10);
+    cambiarEstado("feliz");
+
+    resultadoJuego.textContent =
+      "🎉 ¡Correcto! Ganaste 10 puntos.";
+
+    hablar("¡Correcto! Ganaste 10 puntos.");
+
+  } else {
+    cambiarEstado("sorprendido");
+
+    resultadoJuego.textContent =
+      "❌ No es correcto. Inténtalo otra vez.";
+
+    hablar("No es correcto. Inténtalo otra vez.");
+  }
+}
+
+function sorpresa() {
+  const opciones = [
+    iniciarTrivia,
+    iniciarAdivinanza,
+    contarChiste,
+    iniciarPiedraPapelTijera
+  ];
+
+  cambiarEstado("sorprendido");
+
+  const funcion =
+    opciones[
+      Math.floor(Math.random() * opciones.length)
+    ];
+
+  funcion();
+}
+
+sorprendemeBtn.addEventListener(
+  "click",
+  sorpresa
+);
+
+triviaBtn.addEventListener(
+  "click",
+  iniciarTrivia
+);
+
+adivinanzaBtn.addEventListener(
+  "click",
+  iniciarAdivinanza
+);
+
+chisteBtn.addEventListener(
+  "click",
+  contarChiste
+);
+
+piedraPapelTijeraBtn.addEventListener(
+  "click",
+  iniciarPiedraPapelTijera
+);
+
+comprobarTriviaBtn.addEventListener(
+  "click",
+  comprobarRespuesta
+);
+
+respuestaUsuario.addEventListener(
+  "keydown",
+  evento => {
+    if (evento.key === "Enter") {
+      comprobarRespuesta();
+    }
+  }
+);
+
+document
+  .querySelectorAll("#opcionesPPT button")
+  .forEach(boton => {
+    boton.addEventListener("click", () => {
+      jugarPPT(
+        boton.dataset.eleccion
+      );
+    });
+  });
 
 /* =========================
    INICIO
 ========================= */
 
+cambiarEstado("normal");
 iniciarTemporizadorDormir();
