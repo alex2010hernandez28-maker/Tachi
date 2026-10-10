@@ -376,3 +376,42 @@ footer {
     margin: 4px;
   }
 }
+/* HISTORIAL DE CONVERSACIONES */
+#historialConversaciones {
+  margin-top: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mensaje-historial {
+  padding: 12px;
+  border: 1px solid #168cff;
+  border-radius: 10px;
+  background: rgba(0, 100, 255, 0.08);
+  overflow-wrap: anywhere;
+}
+
+.mensaje-historial small {
+  display: block;
+  color: #69baff;
+  margin-bottom: 5px;
+}
+
+#historialConversaciones a,
+#resultadoInvestigacion a {
+  color: #69baff;
+  text-decoration: underline;
+}
+
+#resultadoInvestigacion {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 15px 0;
+}
+
+#borrarHistorial {
+  background: #8b1728;
+  color: white;
+}
+
