@@ -9,190 +9,185 @@
   let escuchando = false;
   let conversacionActiva = false;
   let procesando = false;
-  let reinicioPendiente = false;
+  let temporizadorEscucha = null;
+  let numeroPregunta = 0;
 
+  const estadoTachi = $("estadoTachi");
+  const rostroTachi = $("rostroTachi");
   const entradaUsuario = $("entradaUsuario");
   const respuestaVoz = $("respuestaVoz");
-  const estadoTachi = $("estadoTachi");
-  const preguntaInvestigacion = $("preguntaInvestigacion");
-  const investigarBtn = $("investigar");
-  const resultadoInvestigacion = $("resultadoInvestigacion");
-  const abrirBusqueda = $("abrirBusqueda");
-  const operacion = $("operacion");
-  const resultadoCalculo = $("resultadoCalculo");
-  const resultadoDiversion = $("resultadoDiversion");
   const listaHistorial = $("listaHistorial");
 
   function establecerEstado(texto, clase = "") {
-    estadoTachi.textContent = texto;
-    document.body.classList.remove("escuchando", "pensando");
-    if (clase) document.body.classList.add(clase);
-  }
+    if (estadoTachi) estadoTachi.textContent = texto;
 
-  // HISTORIAL
-  function leerHistorial() {
-    try {
-      const datos = JSON.parse(
-        localStorage.getItem(CLAVE_HISTORIAL) || "[]"
+    if (rostroTachi) {
+      rostroTachi.classList.remove(
+        "escuchando",
+        "pensando",
+        "hablando"
       );
-      return Array.isArray(datos) ? datos : [];
-    } catch {
-      return [];
+
+      if (clase) rostroTachi.classList.add(clase);
     }
   }
 
-  function guardarMensajeHistorial(autor, mensaje) {
-    const texto = String(mensaje || "").trim();
-    if (!texto) return;
-
-    const historial = leerHistorial();
-    historial.push({
-      autor: autor === "usuario" ? "usuario" : "tachi",
-      mensaje: texto.slice(0, 5000),
-      fecha: new Date().toISOString()
-    });
-
+  function guardarMensajeHistorial(tipo, texto) {
     try {
+      const historial = JSON.parse(
+        localStorage.getItem(CLAVE_HISTORIAL) || "[]"
+      );
+
+      historial.push({
+        tipo,
+        texto,
+        fecha: new Date().toLocaleString("es-SV")
+      });
+
       localStorage.setItem(
         CLAVE_HISTORIAL,
-        JSON.stringify(historial.slice(-200))
+        JSON.stringify(historial.slice(-100))
       );
+
       mostrarHistorial();
     } catch (error) {
-      console.warn("No se pudo guardar el historial.", error);
+      console.error("Error guardando historial:", error);
     }
   }
 
   function mostrarHistorial() {
+    if (!listaHistorial) return;
+
     listaHistorial.replaceChildren();
-    const historial = leerHistorial();
 
-    if (!historial.length) {
-      const mensaje = document.createElement("p");
-      mensaje.className = "suave";
-      mensaje.textContent = "Todavía no hay mensajes guardados.";
-      listaHistorial.appendChild(mensaje);
-      return;
+    try {
+      const historial = JSON.parse(
+        localStorage.getItem(CLAVE_HISTORIAL) || "[]"
+      );
+
+      historial.slice().reverse().forEach((item) => {
+        const elemento = document.createElement("div");
+        elemento.className = "item-historial";
+
+        const titulo = document.createElement("strong");
+        titulo.textContent =
+          item.tipo === "usuario" ? "Tú: " : "Tachi: ";
+
+        const contenido = document.createElement("span");
+        contenido.textContent = item.texto;
+
+        elemento.append(titulo, contenido);
+
+        if (item.fecha) {
+          const fecha = document.createElement("small");
+          fecha.textContent = item.fecha;
+          elemento.appendChild(fecha);
+        }
+
+        listaHistorial.appendChild(elemento);
+      });
+    } catch (error) {
+      console.error("Error mostrando historial:", error);
     }
-
-    historial.slice().reverse().forEach((item) => {
-      const tarjeta = document.createElement("div");
-      tarjeta.className = "item-historial";
-
-      const cabecera = document.createElement("div");
-      cabecera.className = "item-historial-top";
-
-      const autor = document.createElement("strong");
-      autor.textContent = item.autor === "usuario" ? "Tú" : "Tachi";
-
-      const fecha = document.createElement("time");
-      const date = new Date(item.fecha);
-      fecha.textContent = Number.isNaN(date.getTime())
-        ? ""
-        : date.toLocaleString("es-SV", {
-            dateStyle: "short",
-            timeStyle: "short"
-          });
-
-      const texto = document.createElement("p");
-      texto.textContent = item.mensaje || "";
-
-      cabecera.append(autor, fecha);
-      tarjeta.append(cabecera, texto);
-      listaHistorial.appendChild(tarjeta);
-    });
   }
 
-  // VOZ DE TACHI
-  function hablarTexto(texto) {
-    if (!("speechSynthesis" in window)) {
-      establecerEstado("Tu navegador no admite respuestas por voz.");
-      terminarRespuesta();
+  // RESPUESTA AUTOMÁTICA DE TACHI
+  function responder(mensaje, opciones = {}) {
+    const texto = String(mensaje || "").trim();
+    if (!texto) return;
+
+    ultimaRespuesta = texto;
+
+    if (respuestaVoz) {
+      respuestaVoz.textContent = texto;
+    }
+
+    if (opciones.guardar !== false) {
+      guardarMensajeHistorial("tachi", texto);
+    }
+
+    if (opciones.hablar === false) {
+      terminarRespuesta(false);
       return;
     }
 
+    hablarTexto(texto);
+  }
+
+  function hablarTexto(texto) {
+    if (!("speechSynthesis" in window)) {
+      establecerEstado(
+        "No se puede reproducir voz en este navegador."
+      );
+      terminarRespuesta(false);
+      return;
+    }
+
+    // Evita que una respuesta anterior se mezcle con la nueva.
     window.speechSynthesis.cancel();
 
     const voz = new SpeechSynthesisUtterance(String(texto));
     voz.lang = "es-SV";
     voz.rate = 1;
     voz.pitch = 1;
+    voz.volume = 1;
 
     voz.onstart = () => {
-      establecerEstado("Tachi está hablando…");
+      establecerEstado("Tachi está hablando…", "hablando");
     };
 
     voz.onend = () => {
-      terminarRespuesta();
+      terminarRespuesta(true);
     };
 
-    voz.onerror = () => {
-      terminarRespuesta();
+    voz.onerror = (evento) => {
+      console.error("Error de voz:", evento.error);
+      terminarRespuesta(true);
     };
 
     window.speechSynthesis.speak(voz);
   }
 
-  function responder(mensaje, opciones = {}) {
-    const texto = String(mensaje || "").trim();
-    if (!texto) {
-      terminarRespuesta();
-      return;
-    }
-
-    ultimaRespuesta = texto;
-    respuestaVoz.textContent = texto;
-
-    if (opciones.guardar !== false) {
-      guardarMensajeHistorial("tachi", texto);
-    }
-
-    if (opciones.hablar !== false) {
-      hablarTexto(texto);
-    } else {
-      terminarRespuesta();
-    }
-  }
-
-  // CONVERSACIÓN AUTOMÁTICA
-  function terminarRespuesta() {
+  function terminarRespuesta(reanudar = true) {
     procesando = false;
+
     document.body.classList.remove("pensando");
 
-    if (conversacionActiva) {
+    if (conversacionActiva && reanudar) {
       establecerEstado(
-        "Puedes hacer otra pregunta. Te estoy escuchando."
+        "Puedes preguntarme otra cosa. Te escucho.",
+        "escuchando"
       );
+
       programarEscucha();
-    } else {
-      establecerEstado("Tu asistente está listo para ayudarte.");
+    } else if (!conversacionActiva) {
+      establecerEstado("Tachi está listo para ayudarte.");
     }
   }
 
+  // ESCUCHA AUTOMÁTICA DESPUÉS DE CADA RESPUESTA
   function programarEscucha() {
-    if (!conversacionActiva || reinicioPendiente) return;
+    if (!conversacionActiva) return;
 
-    reinicioPendiente = true;
+    clearTimeout(temporizadorEscucha);
 
-    // Espera un momento para no confundir la voz de Tachi
-    // con la siguiente pregunta del usuario.
-    setTimeout(() => {
-      reinicioPendiente = false;
+    temporizadorEscucha = setTimeout(() => {
+      if (!conversacionActiva || procesando || escuchando) return;
 
-      if (!conversacionActiva || procesando) return;
       iniciarEscucha();
-    }, 700);
+    }, 900);
   }
 
   function iniciarEscucha() {
-    if (!reconocimiento || escuchando || procesando) return;
+    if (!reconocimiento || !conversacionActiva) return;
+    if (escuchando || procesando) return;
 
     try {
       reconocimiento.start();
     } catch (error) {
-      console.warn("No se pudo iniciar la escucha.", error);
+      console.warn("No se pudo iniciar el micrófono:", error);
       establecerEstado(
-        "Pulsa Hablar para reactivar el micrófono."
+        "Pulsa Hablar para activar de nuevo el micrófono."
       );
     }
   }
@@ -204,55 +199,67 @@
 
     if (!SpeechRecognition) {
       responder(
-        "Este navegador no admite reconocimiento de voz. Prueba con un navegador compatible o escribe tu pregunta.",
-        { hablar: false, guardar: false }
+        "Tu navegador no admite reconocimiento de voz. Prueba con Google Chrome o Microsoft Edge.",
+        { guardar: false }
       );
+      return;
+    }
+
+    if (conversacionActiva) {
+      if (!escuchando && !procesando) iniciarEscucha();
       return;
     }
 
     conversacionActiva = true;
 
-    if (reconocimiento) {
-      try {
-        reconocimiento.abort();
-      } catch {}
-    }
-
     reconocimiento = new SpeechRecognition();
     reconocimiento.lang = "es-SV";
+    reconocimiento.continuous = false;
     reconocimiento.interimResults = false;
     reconocimiento.maxAlternatives = 1;
-    reconocimiento.continuous = false;
 
     reconocimiento.onstart = () => {
       escuchando = true;
+
       establecerEstado(
         "Te estoy escuchando… habla cuando quieras.",
         "escuchando"
       );
-      respuestaVoz.textContent =
-        "Te estoy escuchando. Cuando termines tu pregunta, responderé.";
+
+      if (respuestaVoz) {
+        respuestaVoz.textContent = "Te estoy escuchando…";
+      }
     };
 
-    reconocimiento.onresult = (evento) => {
+    reconocimiento.onresult = async (evento) => {
       const texto =
         evento.results?.[0]?.[0]?.transcript?.trim() || "";
 
       if (!texto || !conversacionActiva) return;
 
-      entradaUsuario.value = texto;
+      numeroPregunta++;
       procesando = true;
-      establecerEstado("Estoy preparando tu respuesta…", "pensando");
 
-      procesarComando(texto);
+      if (entradaUsuario) entradaUsuario.value = texto;
+
+      establecerEstado("Estoy preparando tu respuesta…", "pensando");
+      document.body.classList.add("pensando");
+
+      guardarMensajeHistorial("usuario", texto);
+
+      await procesarComando(texto);
     };
 
     reconocimiento.onerror = (evento) => {
       escuchando = false;
+      console.warn("Error del reconocimiento:", evento.error);
 
-      if (evento.error === "not-allowed" ||
-          evento.error === "service-not-allowed") {
+      if (
+        evento.error === "not-allowed" ||
+        evento.error === "service-not-allowed"
+      ) {
         conversacionActiva = false;
+
         responder(
           "Necesitas permitir el acceso al micrófono en tu navegador.",
           { guardar: false }
@@ -278,129 +285,124 @@
 
   function detenerConversacion() {
     conversacionActiva = false;
-    procesando = false;
-    reinicioPendiente = false;
+    escuchando = false;
+    clearTimeout(temporizadorEscucha);
 
     if (reconocimiento) {
       try {
         reconocimiento.abort();
-      } catch {}
+      } catch (error) {
+        console.warn(error);
+      }
     }
 
     if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel();
     }
 
-    escuchando = false;
-    document.body.classList.remove("escuchando", "pensando");
-    establecerEstado("Conversación detenida.");
+    establecerEstado("Voz detenida. Pulsa Hablar para continuar.");
   }
 
-  // PROCESAR PREGUNTAS
-  function procesarComando(texto) {
-    const comando = texto.trim();
-    const normalizado = comando.toLowerCase();
+  // PROCESAMIENTO DE PREGUNTAS Y COMANDOS
+  async function procesarComando(mensaje) {
+    const texto = mensaje.trim();
+    const t = texto.toLowerCase();
 
-    guardarMensajeHistorial("usuario", comando);
+    try {
+      if (/^(hola|hey|buenas|buenos días|buenas tardes|buenas noches)\b/i.test(t)) {
+        responder("¡Hola! Soy Tachi, tu asistente. ¿Qué quieres saber?");
+        return;
+      }
 
-    if (/^(hola|buenas|hey|buenos días|buenas tardes|buenas noches)\b/.test(normalizado)) {
-      responder("¡Hola! Soy Tachi. Pregúntame algo, pídeme un cálculo o dime qué quieres investigar.");
-      return;
-    }
+      if (t.includes("cómo te llamas") || t.includes("quién eres")) {
+        responder("Me llamo Tachi, tu asistente virtual.");
+        return;
+      }
 
-    if (
-      normalizado.includes("cómo te llamas") ||
-      normalizado.includes("quién eres")
-    ) {
-      responder("Me llamo Tachi, tu asistente personal.");
-      return;
-    }
-
-    if (normalizado.includes("qué hora") || normalizado === "hora") {
-      responder(
-        "La hora de tu dispositivo es " +
-        new Date().toLocaleTimeString("es-SV", {
+      if (t.includes("qué hora es") || t.includes("dime la hora")) {
+        responder("Son las " + new Date().toLocaleTimeString("es-SV", {
           hour: "2-digit",
           minute: "2-digit"
-        }) + "."
-      );
-      return;
-    }
-
-    if (normalizado.includes("fecha") || normalizado.includes("qué día es")) {
-      responder(
-        "Hoy es " +
-        new Date().toLocaleDateString("es-SV", {
-          dateStyle: "full"
-        }) + "."
-      );
-      return;
-    }
-
-    if (normalizado.includes("chiste")) {
-      contarChiste();
-      return;
-    }
-
-    if (normalizado.includes("dato curioso")) {
-      mostrarDato();
-      return;
-    }
-
-    if (/^(investiga|busca|buscar)\s+/i.test(comando)) {
-      const tema = comando
-        .replace(/^(investiga|busca|buscar)\s+/i, "")
-        .trim();
-
-      if (tema) {
-        preguntaInvestigacion.value = tema;
-        investigarTema(tema);
-      } else {
-        responder("Dime qué tema quieres investigar.");
+        }));
+        return;
       }
-      return;
-    }
 
-    if (/^calcula\s+/i.test(comando)) {
-      operacion.value = comando.replace(/^calcula\s+/i, "").trim();
-      calcularOperacion();
-      return;
-    }
+      if (t.includes("qué fecha es") || t.includes("qué día es hoy")) {
+        responder("Hoy es " + new Date().toLocaleDateString("es-SV", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric"
+        }));
+        return;
+      }
 
-    if (
-      normalizado.includes("ayuda") ||
-      normalizado.includes("qué puedes hacer")
-    ) {
-      responder("Puedo hacer cálculos, buscar información en Wikipedia, decirte la fecha y la hora, contar chistes y darte datos curiosos.");
-      return;
-    }
+      if (t.includes("chiste") || t.includes("hazme reír")) {
+        mostrarChiste();
+        return;
+      }
 
-    responder(
-      "No tengo una respuesta preparada para esa pregunta. Puedes decir «investiga planetas» para buscar información, o escribir tu pregunta en Google."
-    );
+      if (t.includes("dato curioso")) {
+        mostrarDato();
+        return;
+      }
+
+      if (t.includes("trivia") || t.includes("pregunta de cultura general")) {
+        mostrarTrivia();
+        return;
+      }
+
+      if (
+        t.startsWith("investiga ") ||
+        t.startsWith("busca ") ||
+        t.startsWith("buscar ") ||
+        t.startsWith("investiga sobre ") ||
+        t.startsWith("qué es ") ||
+        t.startsWith("quién es ") ||
+        t.startsWith("quién fue ")
+      ) {
+        const consulta = texto
+          .replace(/^(investiga sobre|investiga|busca|buscar)\s+/i, "")
+          .trim();
+
+        await investigarTema(consulta || texto);
+        return;
+      }
+
+      if (t.startsWith("calcula ")) {
+        calcularOperacion(texto.replace(/^calcula\s+/i, ""));
+        return;
+      }
+
+      if (t.includes("ayuda") || t.includes("qué puedes hacer")) {
+        responder(
+          "Puedo responder saludos, decirte la hora, contar chistes, darte datos curiosos, hacer cálculos e investigar temas en Wikipedia. Por ahora no tengo todas las capacidades de una inteligencia artificial como ChatGPT."
+        );
+        return;
+      }
+
+      responder(
+        "He escuchado: " + texto +
+        ". Todavía no tengo una respuesta preparada para esa pregunta. Puedes decir investiga seguido del tema que quieres consultar."
+      );
+    } catch (error) {
+      console.error("Error procesando la pregunta:", error);
+      responder("Lo siento, ocurrió un error al preparar la respuesta.");
+    }
   }
 
   // INVESTIGACIÓN EN WIKIPEDIA
-  async function investigarTema(tema) {
-    const consulta = String(tema || "").trim();
+  async function investigarTema(consulta) {
+    const resultado = $("resultadoInvestigacion");
+    const boton = $("investigar");
 
     if (!consulta) {
-      responder("Escribe qué tema quieres investigar.");
+      responder("Dime qué tema quieres investigar.");
       return;
     }
 
-    investigarBtn.disabled = true;
-    investigarBtn.textContent = "Buscando…";
-    resultadoInvestigacion.replaceChildren();
-
-    const cargando = document.createElement("p");
-    cargando.className = "suave";
-    cargando.textContent = "Buscando información en Wikipedia…";
-    resultadoInvestigacion.appendChild(cargando);
-
-    abrirBusqueda.href =
-      "https://www.google.com/search?q=" +
-      encodeURIComponent(consulta);
+    if (resultado) resultado.textContent = "Buscando información…";
+    if (boton) boton.disabled = true;
 
     try {
       const url =
@@ -408,253 +410,277 @@
         encodeURIComponent(consulta);
 
       const respuesta = await fetch(url);
-      if (!respuesta.ok) throw new Error("Error de conexión");
+
+      if (!respuesta.ok) {
+        throw new Error("No se pudo conectar con Wikipedia.");
+      }
 
       const datos = await respuesta.json();
-      const resultados = datos?.query?.search || [];
-
-      resultadoInvestigacion.replaceChildren();
+      const resultados = datos.query?.search || [];
 
       if (!resultados.length) {
-        const aviso = document.createElement("p");
-        aviso.className = "suave";
-        aviso.textContent =
-          "No encontré resultados. Prueba con otras palabras o abre Google.";
-        resultadoInvestigacion.appendChild(aviso);
+        if (resultado) resultado.textContent = "No encontré resultados.";
         responder("No encontré resultados para " + consulta + ".");
         return;
       }
 
-      resultados.forEach((resultado) => {
-        const tarjeta = document.createElement("article");
-        tarjeta.className = "resultado-item";
+      if (resultado) {
+        resultado.replaceChildren();
 
-        const titulo = document.createElement("h3");
-        titulo.textContent = resultado.title || "Resultado";
+        resultados.forEach((item) => {
+          const tarjeta = document.createElement("article");
+          tarjeta.className = "resultado";
 
-        const resumen = document.createElement("p");
-        const temporal = document.createElement("div");
-        temporal.innerHTML = resultado.snippet || "";
-        resumen.textContent =
-          (temporal.textContent || "").replace(/\s+/g, " ").trim();
+          const titulo = document.createElement("h3");
+          titulo.textContent = item.title;
 
-        const enlace = document.createElement("a");
-        enlace.href =
-          "https://es.wikipedia.org/?curid=" +
-          encodeURIComponent(resultado.pageid);
-        enlace.target = "_blank";
-        enlace.rel = "noopener noreferrer";
-        enlace.textContent = "Leer en Wikipedia ↗";
+          const resumen = document.createElement("p");
+          resumen.textContent = item.snippet
+            .replace(/<[^>]*>/g, "")
+            .replace(/&quot;/g, '"')
+            .replace(/&#39;/g, "'")
+            .replace(/&amp;/g, "&");
 
-        tarjeta.append(titulo, resumen, enlace);
-        resultadoInvestigacion.appendChild(tarjeta);
-      });
+          const enlace = document.createElement("a");
+          enlace.href =
+            "https://es.wikipedia.org/?curid=" + item.pageid;
+          enlace.target = "_blank";
+          enlace.rel = "noopener noreferrer";
+          enlace.textContent = "Leer más";
 
-      const nota = document.createElement("p");
-      nota.className = "suave";
-      nota.textContent =
-        "Puedes abrir cada resultado para leer más información.";
-      resultadoInvestigacion.appendChild(nota);
+          tarjeta.append(titulo, resumen, enlace);
+          resultado.appendChild(tarjeta);
+        });
+      }
+
+      const primerResultado = resultados[0];
+      const resumenVoz = primerResultado.snippet
+        .replace(/<[^>]*>/g, "")
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&amp;/g, "&");
 
       responder(
         "Encontré " + resultados.length +
-        " resultados para " + consulta +
-        ". Te los mostraré en pantalla."
+        " resultados sobre " + consulta +
+        ". El primero es " + primerResultado.title +
+        ". " + resumenVoz
       );
     } catch (error) {
       console.error(error);
 
-      resultadoInvestigacion.replaceChildren();
-
-      const aviso = document.createElement("p");
-      aviso.className = "suave";
-      aviso.textContent =
-        "No pude conectar con Wikipedia. Revisa internet o utiliza Google.";
-      resultadoInvestigacion.appendChild(aviso);
+      if (resultado) {
+        resultado.textContent =
+          "No se pudo investigar. Comprueba tu conexión a internet.";
+      }
 
       responder(
-        "No pude conectar con Wikipedia. Revisa tu conexión a internet."
+        "No pude consultar Wikipedia. Comprueba tu conexión a internet e inténtalo otra vez."
       );
     } finally {
-      investigarBtn.disabled = false;
-      investigarBtn.textContent = "Buscar";
+      if (boton) boton.disabled = false;
     }
   }
 
   // CALCULADORA
-  function calcularOperacion() {
-    const expresion = operacion.value.trim();
+  function calcularOperacion(expresion) {
+    const resultado = $("resultadoCalculo");
+    const limpia = expresion.replace(/,/g, ".").trim();
 
-    if (!expresion) {
-      responder("Escribe una operación matemática.");
-      return;
-    }
-
-    if (!/^[0-9+\-*/().%\s]+$/.test(expresion)) {
-      responder("Usa números, signos matemáticos y paréntesis.");
+    if (!limpia || !/^[0-9+\-*/().%\s]+$/.test(limpia)) {
+      responder("Esa operación no es válida. Prueba, por ejemplo, calcula 25 por 4 usando el símbolo de multiplicación.");
       return;
     }
 
     try {
-      const resultado = Function(
-        '"use strict"; return (' + expresion + ');'
-      )();
+      const valor = Function('"use strict"; return (' + limpia + ");")();
 
-      if (typeof resultado !== "number" ||
-          !Number.isFinite(resultado)) {
-        throw new Error("Operación inválida");
+      if (typeof valor !== "number" || !Number.isFinite(valor)) {
+        throw new Error("Operación no válida");
       }
 
-      const numero = Number.isInteger(resultado)
-        ? String(resultado)
-        : String(Number(resultado.toFixed(8)));
+      const respuesta = "El resultado es " + valor;
 
-      resultadoCalculo.textContent = "Resultado: " + numero;
-      responder("El resultado de " + expresion + " es " + numero + ".");
-    } catch {
-      responder("No pude resolver esa operación. Revisa los números y los signos.");
+      if (resultado) resultado.textContent = respuesta;
+
+      responder(respuesta);
+    } catch (error) {
+      if (resultado) resultado.textContent = "Operación no válida.";
+      responder("No pude calcular esa operación. Revisa los números y símbolos.");
     }
   }
 
-  // ENTRETENIMIENTO
-  const chistes = [
-    "¿Qué hace una abeja en el gimnasio? ¡Zum-ba!",
-    "¿Por qué estaba triste el libro de matemáticas? Porque tenía muchos problemas.",
-    "¿Qué le dijo un cero a un ocho? ¡Bonito cinturón!",
-    "¿Qué hace una computadora cuando tiene frío? Cierra Windows."
-  ];
+  // DIVERSIÓN
+  function mostrarChiste() {
+    const chistes = [
+      "¿Por qué el libro de matemáticas estaba triste? Porque tenía muchos problemas.",
+      "¿Qué hace una abeja en el gimnasio? ¡Zum-ba!",
+      "¿Por qué la computadora fue al médico? Porque tenía un virus.",
+      "¿Qué le dijo un semáforo a otro? No me mires, me estoy cambiando."
+    ];
 
-  const datos = [
-    "Los pulpos tienen tres corazones.",
-    "La luz del Sol tarda aproximadamente ocho minutos y veinte segundos en llegar a la Tierra.",
-    "Los tiburones existen desde antes que los árboles.",
-    "En Venus, un día dura más que un año venusiano."
-  ];
+    const chiste = chistes[Math.floor(Math.random() * chistes.length)];
+    const salida = $("resultadoDiversion");
 
-  const trivias = [
-    {
-      pregunta: "¿Cuál es el planeta más grande del sistema solar?",
-      opciones: "A) Marte · B) Júpiter · C) Venus",
-      respuesta: "Júpiter"
-    },
-    {
-      pregunta: "¿Cuántos lados tiene un hexágono?",
-      opciones: "A) 5 · B) 6 · C) 8",
-      respuesta: "Seis lados"
-    },
-    {
-      pregunta: "¿Cuál es el océano más grande?",
-      opciones: "A) Pacífico · B) Atlántico · C) Índico",
-      respuesta: "El océano Pacífico"
-    }
-  ];
-
-  function aleatorio(lista) {
-    return lista[Math.floor(Math.random() * lista.length)];
-  }
-
-  function contarChiste() {
-    const chiste = aleatorio(chistes);
-    resultadoDiversion.textContent = chiste;
+    if (salida) salida.textContent = chiste;
     responder(chiste);
   }
 
   function mostrarDato() {
-    const dato = aleatorio(datos);
-    resultadoDiversion.textContent = dato;
+    const datos = [
+      "Los pulpos tienen tres corazones.",
+      "La luz del Sol tarda aproximadamente ocho minutos en llegar a la Tierra.",
+      "Los tiburones existen desde antes que los árboles.",
+      "La Tierra no es una esfera perfecta: está ligeramente achatada en los polos."
+    ];
+
+    const dato = datos[Math.floor(Math.random() * datos.length)];
+    const salida = $("resultadoDiversion");
+
+    if (salida) salida.textContent = dato;
     responder(dato);
   }
 
   function mostrarTrivia() {
-    const trivia = aleatorio(trivias);
-    resultadoDiversion.replaceChildren();
+    const preguntas = [
+      {
+        pregunta: "¿Cuál es el planeta más grande del sistema solar?",
+        opciones: ["Marte", "Júpiter", "Venus"],
+        correcta: "Júpiter"
+      },
+      {
+        pregunta: "¿Cuántos lados tiene un hexágono?",
+        opciones: ["Cinco", "Seis", "Ocho"],
+        correcta: "Seis"
+      },
+      {
+        pregunta: "¿Cuál es la capital de El Salvador?",
+        opciones: ["San Salvador", "Santa Ana", "San Miguel"],
+        correcta: "San Salvador"
+      }
+    ];
 
-    const pregunta = document.createElement("p");
-    pregunta.textContent = trivia.pregunta;
+    const pregunta =
+      preguntas[Math.floor(Math.random() * preguntas.length)];
 
-    const opciones = document.createElement("p");
-    opciones.textContent = trivia.opciones;
+    const salida = $("resultadoDiversion");
 
-    const boton = document.createElement("button");
-    boton.className = "secundario";
-    boton.textContent = "Mostrar respuesta";
+    if (salida) {
+      salida.replaceChildren();
 
-    boton.addEventListener("click", () => {
-      const respuesta = document.createElement("p");
-      respuesta.textContent = "Respuesta: " + trivia.respuesta;
-      resultadoDiversion.appendChild(respuesta);
-      boton.disabled = true;
+      const texto = document.createElement("p");
+      texto.textContent = pregunta.pregunta;
+      salida.appendChild(texto);
 
-      guardarMensajeHistorial(
-        "tachi",
-        "Respuesta de trivia: " + trivia.respuesta
-      );
-    });
+      pregunta.opciones.forEach((opcion) => {
+        const boton = document.createElement("button");
+        boton.textContent = opcion;
 
-    resultadoDiversion.append(pregunta, opciones, boton);
-    responder(trivia.pregunta + " " + trivia.opciones);
+        boton.addEventListener("click", () => {
+          const correcta = opcion === pregunta.correcta;
+          const mensaje = correcta
+            ? "¡Correcto! La respuesta es " + pregunta.correcta + "."
+            : "No exactamente. La respuesta correcta es " +
+              pregunta.correcta + ".";
+
+          texto.textContent = pregunta.pregunta + " " + mensaje;
+          salida.querySelectorAll("button").forEach((b) => {
+            b.disabled = true;
+          });
+
+          responder(mensaje);
+        });
+
+        salida.appendChild(boton);
+      });
+    }
+
+    responder(pregunta.pregunta + " Opciones: " + pregunta.opciones.join(", "));
   }
 
-  // BOTONES
-  $("hablar").addEventListener("click", activarConversacion);
+  // BOTONES Y CAMPOS
+  function enviarTexto() {
+    if (!entradaUsuario) return;
 
-  $("detenerVoz").addEventListener("click", detenerConversacion);
-
-  $("enviarMensaje").addEventListener("click", () => {
     const texto = entradaUsuario.value.trim();
     if (!texto) return;
+
+    guardarMensajeHistorial("usuario", texto);
+    entradaUsuario.value = "";
+
+    procesando = true;
+    establecerEstado("Estoy preparando tu respuesta…", "pensando");
+    document.body.classList.add("pensando");
+
     procesarComando(texto);
-  });
+  }
 
-  entradaUsuario.addEventListener("keydown", (evento) => {
-    if (evento.key === "Enter") {
-      const texto = entradaUsuario.value.trim();
-      if (!texto) return;
-      procesarComando(texto);
-    }
-  });
+  if ($("enviarMensaje")) {
+    $("enviarMensaje").addEventListener("click", enviarTexto);
+  }
 
-  $("repetirRespuesta").addEventListener("click", () => {
-    if (ultimaRespuesta) hablarTexto(ultimaRespuesta);
-  });
+  if (entradaUsuario) {
+    entradaUsuario.addEventListener("keydown", (evento) => {
+      if (evento.key === "Enter") {
+        evento.preventDefault();
+        enviarTexto();
+      }
+    });
+  }
 
-  investigarBtn.addEventListener("click", () => {
-    investigarTema(preguntaInvestigacion.value);
-  });
+  if ($("hablar")) {
+    $("hablar").addEventListener("click", activarConversacion);
+  }
 
-  preguntaInvestigacion.addEventListener("keydown", (evento) => {
-    if (evento.key === "Enter") {
-      investigarTema(preguntaInvestigacion.value);
-    }
-  });
+  if ($("detenerVoz")) {
+    $("detenerVoz").addEventListener("click", detenerConversacion);
+  }
 
-  abrirBusqueda.addEventListener("click", () => {
-    const tema = preguntaInvestigacion.value.trim();
-    if (tema) {
-      abrirBusqueda.href =
-        "https://www.google.com/search?q=" +
-        encodeURIComponent(tema);
-    }
-  });
+  if ($("repetirRespuesta")) {
+    $("repetirRespuesta").addEventListener("click", () => {
+      if (ultimaRespuesta) hablarTexto(ultimaRespuesta);
+    });
+  }
 
-  $("calcular").addEventListener("click", calcularOperacion);
+  if ($("investigar")) {
+    $("investigar").addEventListener("click", () => {
+      const campo = $("preguntaInvestigacion");
+      investigarTema(campo ? campo.value.trim() : "");
+    });
+  }
 
-  operacion.addEventListener("keydown", (evento) => {
-    if (evento.key === "Enter") calcularOperacion();
-  });
+  if ($("calcular")) {
+    $("calcular").addEventListener("click", () => {
+      const campo = $("operacion");
+      calcularOperacion(campo ? campo.value : "");
+    });
+  }
 
-  $("botonChiste").addEventListener("click", contarChiste);
-  $("botonTrivia").addEventListener("click", mostrarTrivia);
-  $("botonDato").addEventListener("click", mostrarDato);
-  $("actualizarHistorial").addEventListener("click", mostrarHistorial);
+  if ($("botonChiste")) {
+    $("botonChiste").addEventListener("click", mostrarChiste);
+  }
 
-  $("borrarHistorial").addEventListener("click", () => {
-    if (!confirm("¿Quieres borrar todo el historial de Tachi?")) return;
+  if ($("botonTrivia")) {
+    $("botonTrivia").addEventListener("click", mostrarTrivia);
+  }
 
-    localStorage.removeItem(CLAVE_HISTORIAL);
-    mostrarHistorial();
-    establecerEstado("Historial borrado correctamente.");
-  });
+  if ($("botonDato")) {
+    $("botonDato").addEventListener("click", mostrarDato);
+  }
+
+  if ($("actualizarHistorial")) {
+    $("actualizarHistorial").addEventListener("click", mostrarHistorial);
+  }
+
+  if ($("borrarHistorial")) {
+    $("borrarHistorial").addEventListener("click", () => {
+      if (confirm("¿Quieres borrar todo el historial de Tachi?")) {
+        localStorage.removeItem(CLAVE_HISTORIAL);
+        mostrarHistorial();
+      }
+    });
+  }
 
   mostrarHistorial();
+  establecerEstado("Tachi está listo para ayudarte.");
 })();
