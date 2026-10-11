@@ -6,6 +6,10 @@
 
   let ultimaRespuesta = "";
   let reconocimiento = null;
+  let escuchando = false;
+  let conversacionActiva = false;
+  let procesando = false;
+  let reinicioPendiente = false;
 
   const entradaUsuario = $("entradaUsuario");
   const respuestaVoz = $("respuestaVoz");
@@ -25,6 +29,7 @@
     if (clase) document.body.classList.add(clase);
   }
 
+  // HISTORIAL
   function leerHistorial() {
     try {
       const datos = JSON.parse(
@@ -41,7 +46,6 @@
     if (!texto) return;
 
     const historial = leerHistorial();
-
     historial.push({
       autor: autor === "usuario" ? "usuario" : "tachi",
       mensaje: texto.slice(0, 5000),
@@ -99,51 +103,200 @@
     });
   }
 
+  // VOZ DE TACHI
+  function hablarTexto(texto) {
+    if (!("speechSynthesis" in window)) {
+      establecerEstado("Tu navegador no admite respuestas por voz.");
+      terminarRespuesta();
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    const voz = new SpeechSynthesisUtterance(String(texto));
+    voz.lang = "es-SV";
+    voz.rate = 1;
+    voz.pitch = 1;
+
+    voz.onstart = () => {
+      establecerEstado("Tachi está hablando…");
+    };
+
+    voz.onend = () => {
+      terminarRespuesta();
+    };
+
+    voz.onerror = () => {
+      terminarRespuesta();
+    };
+
+    window.speechSynthesis.speak(voz);
+  }
+
   function responder(mensaje, opciones = {}) {
     const texto = String(mensaje || "").trim();
-    if (!texto) return;
+    if (!texto) {
+      terminarRespuesta();
+      return;
+    }
 
     ultimaRespuesta = texto;
     respuestaVoz.textContent = texto;
-    establecerEstado("Respuesta lista. ¿Qué más necesitas?");
 
     if (opciones.guardar !== false) {
       guardarMensajeHistorial("tachi", texto);
     }
 
-    if (opciones.hablar) {
+    if (opciones.hablar !== false) {
       hablarTexto(texto);
+    } else {
+      terminarRespuesta();
     }
   }
 
-  function hablarTexto(texto) {
-    if (!("speechSynthesis" in window)) {
-      establecerEstado("Tu navegador no admite voz en este momento.");
+  // CONVERSACIÓN AUTOMÁTICA
+  function terminarRespuesta() {
+    procesando = false;
+    document.body.classList.remove("pensando");
+
+    if (conversacionActiva) {
+      establecerEstado(
+        "Puedes hacer otra pregunta. Te estoy escuchando."
+      );
+      programarEscucha();
+    } else {
+      establecerEstado("Tu asistente está listo para ayudarte.");
+    }
+  }
+
+  function programarEscucha() {
+    if (!conversacionActiva || reinicioPendiente) return;
+
+    reinicioPendiente = true;
+
+    // Espera un momento para no confundir la voz de Tachi
+    // con la siguiente pregunta del usuario.
+    setTimeout(() => {
+      reinicioPendiente = false;
+
+      if (!conversacionActiva || procesando) return;
+      iniciarEscucha();
+    }, 700);
+  }
+
+  function iniciarEscucha() {
+    if (!reconocimiento || escuchando || procesando) return;
+
+    try {
+      reconocimiento.start();
+    } catch (error) {
+      console.warn("No se pudo iniciar la escucha.", error);
+      establecerEstado(
+        "Pulsa Hablar para reactivar el micrófono."
+      );
+    }
+  }
+
+  function activarConversacion() {
+    const SpeechRecognition =
+      window.SpeechRecognition ||
+      window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      responder(
+        "Este navegador no admite reconocimiento de voz. Prueba con un navegador compatible o escribe tu pregunta.",
+        { hablar: false, guardar: false }
+      );
       return;
     }
 
-    window.speechSynthesis.cancel();
-    const voz = new SpeechSynthesisUtterance(texto);
-    voz.lang = "es-SV";
-    voz.rate = 1;
-    window.speechSynthesis.speak(voz);
-  }
+    conversacionActiva = true;
 
-  function enviarMensaje() {
-    const texto = entradaUsuario.value.trim();
-
-    if (!texto) {
-      entradaUsuario.focus();
-      responder("Escribe un mensaje para que pueda ayudarte.", {
-        guardar: false
-      });
-      return;
+    if (reconocimiento) {
+      try {
+        reconocimiento.abort();
+      } catch {}
     }
 
-    entradaUsuario.value = "";
-    procesarComando(texto);
+    reconocimiento = new SpeechRecognition();
+    reconocimiento.lang = "es-SV";
+    reconocimiento.interimResults = false;
+    reconocimiento.maxAlternatives = 1;
+    reconocimiento.continuous = false;
+
+    reconocimiento.onstart = () => {
+      escuchando = true;
+      establecerEstado(
+        "Te estoy escuchando… habla cuando quieras.",
+        "escuchando"
+      );
+      respuestaVoz.textContent =
+        "Te estoy escuchando. Cuando termines tu pregunta, responderé.";
+    };
+
+    reconocimiento.onresult = (evento) => {
+      const texto =
+        evento.results?.[0]?.[0]?.transcript?.trim() || "";
+
+      if (!texto || !conversacionActiva) return;
+
+      entradaUsuario.value = texto;
+      procesando = true;
+      establecerEstado("Estoy preparando tu respuesta…", "pensando");
+
+      procesarComando(texto);
+    };
+
+    reconocimiento.onerror = (evento) => {
+      escuchando = false;
+
+      if (evento.error === "not-allowed" ||
+          evento.error === "service-not-allowed") {
+        conversacionActiva = false;
+        responder(
+          "Necesitas permitir el acceso al micrófono en tu navegador.",
+          { guardar: false }
+        );
+        return;
+      }
+
+      if (evento.error === "no-speech" && conversacionActiva) {
+        programarEscucha();
+      }
+    };
+
+    reconocimiento.onend = () => {
+      escuchando = false;
+
+      if (conversacionActiva && !procesando) {
+        programarEscucha();
+      }
+    };
+
+    iniciarEscucha();
   }
 
+  function detenerConversacion() {
+    conversacionActiva = false;
+    procesando = false;
+    reinicioPendiente = false;
+
+    if (reconocimiento) {
+      try {
+        reconocimiento.abort();
+      } catch {}
+    }
+
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+
+    escuchando = false;
+    document.body.classList.remove("escuchando", "pensando");
+    establecerEstado("Conversación detenida.");
+  }
+
+  // PROCESAR PREGUNTAS
   function procesarComando(texto) {
     const comando = texto.trim();
     const normalizado = comando.toLowerCase();
@@ -151,7 +304,7 @@
     guardarMensajeHistorial("usuario", comando);
 
     if (/^(hola|buenas|hey|buenos días|buenas tardes|buenas noches)\b/.test(normalizado)) {
-      responder("¡Hola! Soy Tachi. Puedo ayudarte con cálculos, búsquedas y entretenimiento.");
+      responder("¡Hola! Soy Tachi. Pregúntame algo, pídeme un cálculo o dime qué quieres investigar.");
       return;
     }
 
@@ -164,19 +317,23 @@
     }
 
     if (normalizado.includes("qué hora") || normalizado === "hora") {
-      responder("La hora de tu dispositivo es " +
+      responder(
+        "La hora de tu dispositivo es " +
         new Date().toLocaleTimeString("es-SV", {
           hour: "2-digit",
           minute: "2-digit"
-        }) + ".");
+        }) + "."
+      );
       return;
     }
 
     if (normalizado.includes("fecha") || normalizado.includes("qué día es")) {
-      responder("Hoy es " +
+      responder(
+        "Hoy es " +
         new Date().toLocaleDateString("es-SV", {
           dateStyle: "full"
-        }) + ".");
+        }) + "."
+      );
       return;
     }
 
@@ -191,7 +348,9 @@
     }
 
     if (/^(investiga|busca|buscar)\s+/i.test(comando)) {
-      const tema = comando.replace(/^(investiga|busca|buscar)\s+/i, "").trim();
+      const tema = comando
+        .replace(/^(investiga|busca|buscar)\s+/i, "")
+        .trim();
 
       if (tema) {
         preguntaInvestigacion.value = tema;
@@ -212,20 +371,21 @@
       normalizado.includes("ayuda") ||
       normalizado.includes("qué puedes hacer")
     ) {
-      responder("Puedo investigar temas, calcular operaciones, decirte la fecha y la hora, contar chistes y darte datos curiosos.");
+      responder("Puedo hacer cálculos, buscar información en Wikipedia, decirte la fecha y la hora, contar chistes y darte datos curiosos.");
       return;
     }
 
-    responder("No entendí el mensaje. Prueba con «calcula 12 * 5», «investiga planetas» o «cuéntame un chiste».");
+    responder(
+      "No tengo una respuesta preparada para esa pregunta. Puedes decir «investiga planetas» para buscar información, o escribir tu pregunta en Google."
+    );
   }
 
-  // INVESTIGACIÓN EN INTERNET
+  // INVESTIGACIÓN EN WIKIPEDIA
   async function investigarTema(tema) {
     const consulta = String(tema || "").trim();
 
     if (!consulta) {
-      resultadoInvestigacion.textContent = "Escribe un tema antes de buscar.";
-      preguntaInvestigacion.focus();
+      responder("Escribe qué tema quieres investigar.");
       return;
     }
 
@@ -239,9 +399,8 @@
     resultadoInvestigacion.appendChild(cargando);
 
     abrirBusqueda.href =
-      "https://www.google.com/search?q=" + encodeURIComponent(consulta);
-
-    establecerEstado("Estoy buscando información en internet…", "pensando");
+      "https://www.google.com/search?q=" +
+      encodeURIComponent(consulta);
 
     try {
       const url =
@@ -249,10 +408,7 @@
         encodeURIComponent(consulta);
 
       const respuesta = await fetch(url);
-
-      if (!respuesta.ok) {
-        throw new Error("La búsqueda no respondió correctamente.");
-      }
+      if (!respuesta.ok) throw new Error("Error de conexión");
 
       const datos = await respuesta.json();
       const resultados = datos?.query?.search || [];
@@ -263,10 +419,9 @@
         const aviso = document.createElement("p");
         aviso.className = "suave";
         aviso.textContent =
-          "No encontré resultados. Prueba otras palabras o abre Google.";
+          "No encontré resultados. Prueba con otras palabras o abre Google.";
         resultadoInvestigacion.appendChild(aviso);
-
-        responder("No encontré resultados en Wikipedia para «" + consulta + "».");
+        responder("No encontré resultados para " + consulta + ".");
         return;
       }
 
@@ -279,10 +434,9 @@
 
         const resumen = document.createElement("p");
         const temporal = document.createElement("div");
-        temporal.innerHTML = resultado.snippet || "Resumen no disponible.";
-        resumen.textContent = (
-          temporal.textContent || temporal.innerText || ""
-        ).replace(/\s+/g, " ").trim();
+        temporal.innerHTML = resultado.snippet || "";
+        resumen.textContent =
+          (temporal.textContent || "").replace(/\s+/g, " ").trim();
 
         const enlace = document.createElement("a");
         enlace.href =
@@ -299,31 +453,31 @@
       const nota = document.createElement("p");
       nota.className = "suave";
       nota.textContent =
-        "Información de Wikipedia. Puedes ampliar la búsqueda en Google.";
+        "Puedes abrir cada resultado para leer más información.";
       resultadoInvestigacion.appendChild(nota);
 
       responder(
         "Encontré " + resultados.length +
-        " resultados para «" + consulta + "». Revisa las tarjetas."
+        " resultados para " + consulta +
+        ". Te los mostraré en pantalla."
       );
     } catch (error) {
-      console.error("Error al investigar:", error);
+      console.error(error);
 
       resultadoInvestigacion.replaceChildren();
 
       const aviso = document.createElement("p");
       aviso.className = "suave";
       aviso.textContent =
-        "No pude conectar con Wikipedia. Comprueba internet o utiliza el enlace de Google.";
+        "No pude conectar con Wikipedia. Revisa internet o utiliza Google.";
       resultadoInvestigacion.appendChild(aviso);
 
       responder(
-        "No pude conectar con Wikipedia. Comprueba tu conexión a internet o busca en Google."
+        "No pude conectar con Wikipedia. Revisa tu conexión a internet."
       );
     } finally {
       investigarBtn.disabled = false;
       investigarBtn.textContent = "Buscar";
-      document.body.classList.remove("pensando");
     }
   }
 
@@ -332,13 +486,12 @@
     const expresion = operacion.value.trim();
 
     if (!expresion) {
-      resultadoCalculo.textContent = "Escribe una operación matemática.";
+      responder("Escribe una operación matemática.");
       return;
     }
 
     if (!/^[0-9+\-*/().%\s]+$/.test(expresion)) {
-      resultadoCalculo.textContent =
-        "Utiliza números, +, -, *, /, %, puntos y paréntesis.";
+      responder("Usa números, signos matemáticos y paréntesis.");
       return;
     }
 
@@ -347,8 +500,9 @@
         '"use strict"; return (' + expresion + ');'
       )();
 
-      if (typeof resultado !== "number" || !Number.isFinite(resultado)) {
-        throw new Error("Resultado no válido");
+      if (typeof resultado !== "number" ||
+          !Number.isFinite(resultado)) {
+        throw new Error("Operación inválida");
       }
 
       const numero = Number.isInteger(resultado)
@@ -358,8 +512,7 @@
       resultadoCalculo.textContent = "Resultado: " + numero;
       responder("El resultado de " + expresion + " es " + numero + ".");
     } catch {
-      resultadoCalculo.textContent =
-        "No pude resolver la operación. Revisa los números y operadores.";
+      responder("No pude resolver esa operación. Revisa los números y los signos.");
     }
   }
 
@@ -373,7 +526,7 @@
 
   const datos = [
     "Los pulpos tienen tres corazones.",
-    "La luz del Sol tarda aproximadamente 8 minutos y 20 segundos en llegar a la Tierra.",
+    "La luz del Sol tarda aproximadamente ocho minutos y veinte segundos en llegar a la Tierra.",
     "Los tiburones existen desde antes que los árboles.",
     "En Venus, un día dura más que un año venusiano."
   ];
@@ -387,7 +540,7 @@
     {
       pregunta: "¿Cuántos lados tiene un hexágono?",
       opciones: "A) 5 · B) 6 · C) 8",
-      respuesta: "6 lados"
+      respuesta: "Seis lados"
     },
     {
       pregunta: "¿Cuál es el océano más grande?",
@@ -434,122 +587,35 @@
 
       guardarMensajeHistorial(
         "tachi",
-        "Trivia: " + trivia.pregunta +
-        " Respuesta: " + trivia.respuesta
+        "Respuesta de trivia: " + trivia.respuesta
       );
     });
 
     resultadoDiversion.append(pregunta, opciones, boton);
-
-    guardarMensajeHistorial(
-      "tachi",
-      "Pregunta trivia: " + trivia.pregunta + " " + trivia.opciones
-    );
+    responder(trivia.pregunta + " " + trivia.opciones);
   }
 
-  // RECONOCIMIENTO DE VOZ
-  function iniciarReconocimiento() {
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
+  // BOTONES
+  $("hablar").addEventListener("click", activarConversacion);
 
-    if (!SpeechRecognition) {
-      responder(
-        "Este navegador no admite reconocimiento de voz. Puedes escribir tu mensaje.",
-        { guardar: false }
-      );
-      return;
-    }
+  $("detenerVoz").addEventListener("click", detenerConversacion);
 
-    if (reconocimiento) {
-      try {
-        reconocimiento.abort();
-      } catch {}
-    }
-
-    reconocimiento = new SpeechRecognition();
-    reconocimiento.lang = "es-SV";
-    reconocimiento.interimResults = false;
-    reconocimiento.maxAlternatives = 1;
-
-    reconocimiento.onstart = () => {
-      establecerEstado("Te estoy escuchando… habla ahora.", "escuchando");
-      respuestaVoz.textContent = "Te estoy escuchando…";
-    };
-
-    reconocimiento.onresult = (evento) => {
-      const texto = evento.results?.[0]?.[0]?.transcript || "";
-      entradaUsuario.value = texto;
-
-      if (texto.trim()) {
-        procesarComando(texto);
-      }
-    };
-
-    reconocimiento.onerror = (evento) => {
-      let mensaje = "No pude reconocer tu voz. Inténtalo otra vez.";
-
-      if (
-        evento.error === "not-allowed" ||
-        evento.error === "service-not-allowed"
-      ) {
-        mensaje = "Permite el acceso al micrófono en tu navegador.";
-      } else if (evento.error === "no-speech") {
-        mensaje = "No detecté voz. Pulsa Hablar e inténtalo de nuevo.";
-      }
-
-      responder(mensaje, { guardar: false });
-    };
-
-    reconocimiento.onend = () => {
-      document.body.classList.remove("escuchando");
-
-      if (estadoTachi.textContent === "Te estoy escuchando… habla ahora.") {
-        establecerEstado("Tu asistente está listo para ayudarte.");
-      }
-    };
-
-    try {
-      reconocimiento.start();
-    } catch {
-      responder(
-        "No pude activar el micrófono. Espera un momento e inténtalo de nuevo.",
-        { guardar: false }
-      );
-    }
-  }
-
-  // BOTONES Y EVENTOS
-  $("enviarMensaje").addEventListener("click", enviarMensaje);
-
-  entradaUsuario.addEventListener("keydown", (evento) => {
-    if (evento.key === "Enter") enviarMensaje();
+  $("enviarMensaje").addEventListener("click", () => {
+    const texto = entradaUsuario.value.trim();
+    if (!texto) return;
+    procesarComando(texto);
   });
 
-  $("hablar").addEventListener("click", iniciarReconocimiento);
-
-  $("detenerVoz").addEventListener("click", () => {
-    if (reconocimiento) {
-      try {
-        reconocimiento.stop();
-      } catch {}
+  entradaUsuario.addEventListener("keydown", (evento) => {
+    if (evento.key === "Enter") {
+      const texto = entradaUsuario.value.trim();
+      if (!texto) return;
+      procesarComando(texto);
     }
-
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-    }
-
-    document.body.classList.remove("escuchando");
-    establecerEstado("Voz detenida. Puedes seguir escribiendo.");
   });
 
   $("repetirRespuesta").addEventListener("click", () => {
-    if (ultimaRespuesta) {
-      hablarTexto(ultimaRespuesta);
-    } else {
-      responder("Todavía no tengo una respuesta para repetir.", {
-        guardar: false
-      });
-    }
+    if (ultimaRespuesta) hablarTexto(ultimaRespuesta);
   });
 
   investigarBtn.addEventListener("click", () => {
@@ -564,10 +630,10 @@
 
   abrirBusqueda.addEventListener("click", () => {
     const tema = preguntaInvestigacion.value.trim();
-
     if (tema) {
       abrirBusqueda.href =
-        "https://www.google.com/search?q=" + encodeURIComponent(tema);
+        "https://www.google.com/search?q=" +
+        encodeURIComponent(tema);
     }
   });
 
@@ -585,13 +651,9 @@
   $("borrarHistorial").addEventListener("click", () => {
     if (!confirm("¿Quieres borrar todo el historial de Tachi?")) return;
 
-    try {
-      localStorage.removeItem(CLAVE_HISTORIAL);
-      mostrarHistorial();
-      establecerEstado("Historial borrado correctamente.");
-    } catch {
-      establecerEstado("No pude borrar el historial de este navegador.");
-    }
+    localStorage.removeItem(CLAVE_HISTORIAL);
+    mostrarHistorial();
+    establecerEstado("Historial borrado correctamente.");
   });
 
   mostrarHistorial();
