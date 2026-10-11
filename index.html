@@ -5,148 +5,95 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TACHI | Asistente IA</title>
   <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
 </head>
-
 <body>
-
   <header class="encabezado">
-    <div class="logo">TACHI</div>
-    <p>Tu asistente inteligente futurista</p>
+    <a class="marca" href="#">TACHI <span>ASISTENTE IA</span></a>
+    <div class="conexion"><span></span> SISTEMA ACTIVO</div>
   </header>
 
-  <main>
-
-    <!-- ROSTRO DE TACHI -->
-    <section class="zona-tachi">
-      <div class="estado-tachi">
-        <span class="punto-estado"></span>
-        <span id="estadoTachi">Normal</span>
+  <main class="contenedor">
+    <section class="zona-tachi tarjeta">
+      <div class="etiqueta">ASISTENTE PERSONAL</div>
+      <div class="rostro-tachi" id="rostroTachi">
+        <div class="cabeza">
+          <div class="ceja izquierda"></div>
+          <div class="ceja derecha"></div>
+          <div class="ojo ojo-izquierdo"></div>
+          <div class="ojo ojo-derecho"></div>
+          <div class="boca"></div>
+        </div>
       </div>
-
-      <div class="rostro-tachi">
-        <div class="halo"></div>
-        <img id="rostroTachi" src="tachi-normal.png" alt="Rostro de Tachi">
-      </div>
+      <h1>Hola, soy <span>TACHI</span></h1>
+      <p id="estadoTachi">Tu asistente está listo para ayudarte.</p>
+      <div class="indicadores"><span></span><span></span><span></span></div>
     </section>
 
-    <!-- VOZ -->
-    <section class="tarjeta">
-      <h2>🎤 Hablar con Tachi</h2>
-      <button id="hablar">🎤 Hablar</button>
-      <p id="respuestaVoz">Pulsa el botón y habla con Tachi.</p>
+    <section class="rejilla">
+      <article class="tarjeta">
+        <h2>🎙️ Habla con Tachi</h2>
+        <p class="subtitulo">Escribe o utiliza el micrófono.</p>
+        <div class="fila">
+          <input id="entradaUsuario" placeholder="Escribe tu mensaje..." autocomplete="off">
+          <button id="enviarMensaje">Enviar</button>
+        </div>
+        <div class="fila botones">
+          <button id="hablar" class="secundario">🎤 Hablar</button>
+          <button id="detenerVoz" class="secundario">⏹ Detener voz</button>
+        </div>
+        <div id="respuestaVoz" class="respuesta">Aquí aparecerán las respuestas.</div>
+        <button id="repetirRespuesta" class="enlace">🔊 Repetir respuesta</button>
+      </article>
+
+      <article class="tarjeta">
+        <h2>🌐 Investigar en internet</h2>
+        <p class="subtitulo">Busca temas en Wikipedia.</p>
+        <div class="fila">
+          <input id="preguntaInvestigacion" placeholder="Ej.: agujeros negros">
+          <button id="investigar">Buscar</button>
+        </div>
+        <a id="abrirBusqueda" class="enlace" href="https://www.google.com/" target="_blank" rel="noopener noreferrer">↗ Buscar en Google</a>
+        <div id="resultadoInvestigacion" class="resultados">
+          <p class="suave">Los resultados aparecerán aquí.</p>
+        </div>
+      </article>
+
+      <article class="tarjeta">
+        <h2>🧮 Calculadora</h2>
+        <p class="subtitulo">Resuelve operaciones matemáticas.</p>
+        <div class="fila">
+          <input id="operacion" placeholder="Ej.: (25 + 5) * 3">
+          <button id="calcular">Calcular</button>
+        </div>
+        <div id="resultadoCalculo" class="respuesta">El resultado aparecerá aquí.</div>
+      </article>
+
+      <article class="tarjeta">
+        <h2>🎮 Zona divertida</h2>
+        <div class="botones">
+          <button id="botonChiste" class="secundario">😂 Chiste</button>
+          <button id="botonTrivia" class="secundario">🧠 Trivia</button>
+          <button id="botonDato" class="secundario">✨ Dato curioso</button>
+        </div>
+        <div id="resultadoDiversion" class="respuesta">¡Elige una opción!</div>
+      </article>
+
+      <article class="tarjeta historial">
+        <h2>🗂️ Historial de conversación</h2>
+        <p class="subtitulo">Los mensajes se guardan en este navegador.</p>
+        <div class="botones">
+          <button id="actualizarHistorial" class="secundario">↻ Actualizar</button>
+          <button id="borrarHistorial" class="peligro">🗑 Borrar historial</button>
+        </div>
+        <div id="listaHistorial" class="lista-historial"></div>
+      </article>
     </section>
 
-    <!-- REPETIR -->
-    <section class="tarjeta">
-      <h2>🗣️ Repetir texto</h2>
-      <input type="text" id="textoRepetir" placeholder="Escribe algo...">
-      <button id="repetir">🔊 Repetir</button>
-    </section>
-
-    <!-- INVESTIGACIÓN -->
-    <section class="tarjeta">
-      <h2>🔎 Investigar en Internet</h2>
-
-      <input
-        type="text"
-        id="preguntaInvestigacion"
-        placeholder="¿Qué quieres investigar?"
-      >
-
-      <button id="investigar">🔎 Investigar</button>
-
-      <div id="resultadoInvestigacion">
-        Aquí aparecerán los resultados.
-      </div>
-
-      <button id="abrirBusqueda">🌐 Ver más resultados</button>
-    </section>
-
-    <!-- ENTRETENIMIENTO -->
-    <section class="tarjeta">
-      <h2>🎮 Centro de entretenimiento</h2>
-
-      <button id="sorprendeme">🎲 Sorpréndeme</button>
-      <button id="trivia">🧠 Trivia</button>
-      <button id="adivinanza">🧩 Adivinanza</button>
-      <button id="chiste">😂 Chiste</button>
-      <button id="piedraPapelTijera">✊ Piedra, papel o tijera</button>
-
-      <p>Puntos: <strong id="puntos">0</strong></p>
-
-      <div id="resultadoJuego">
-        Elige una opción para jugar.
-      </div>
-
-      <div id="opcionesPPT" class="oculto">
-        <button data-eleccion="piedra">✊ Piedra</button>
-        <button data-eleccion="papel">✋ Papel</button>
-        <button data-eleccion="tijera">✌️ Tijera</button>
-      </div>
-
-      <div id="zonaRespuesta" class="oculto">
-        <input
-          type="text"
-          id="respuestaUsuario"
-          placeholder="Escribe tu respuesta..."
-        >
-        <button id="comprobarTrivia">✅ Comprobar</button>
-      </div>
-    </section>
-
-    <!-- MATEMÁTICAS -->
-    <section class="tarjeta">
-      <h2>🧮 Resolver matemáticas</h2>
-
-      <input
-        type="text"
-        id="ecuacion"
-        placeholder="Ejemplo: 2x + 5 = 15"
-      >
-
-      <button id="resolver">🧮 Resolver</button>
-
-      <p id="resultadoMatematico">
-        Escribe una operación o ecuación.
-      </p>
-    </section>
-
-    <!-- MÚSICA -->
-    <section class="tarjeta">
-      <h2>🎵 Música</h2>
-
-      <input
-        type="file"
-        id="archivoMusica"
-        accept="audio/*"
-      >
-
-      <audio id="reproductor" controls></audio>
-
-      <div class="controles-musica">
-        <button id="playMusica">▶️ Reproducir</button>
-        <button id="pausaMusica">⏸️ Pausar</button>
-        <button id="stopMusica">⏹️ Detener</button>
-      </div>
-
-      <label for="volumenMusica">🔊 Volumen</label>
-      <input
-        type="range"
-        id="volumenMusica"
-        min="0"
-        max="1"
-        step="0.01"
-        value="1"
-      >
-    </section>
-
+    <footer>
+      <p>TACHI · Asistente personal</p>
+      <p>La investigación y el reconocimiento de voz necesitan conexión o permisos compatibles.</p>
+    </footer>
   </main>
-
-  <footer>
-    <p>TACHI • Asistente futurista 🤖</p>
-  </footer>
-
-  <script src="script.js"></script>
-
 </body>
 </html>
